@@ -60,8 +60,15 @@ lint.ignore = [
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
 [dependency-groups]
 dev = [
     "langgraph-cli[inmem]>=0.1.71",
     "pytest>=8.3.5",
+    "pytest-asyncio>=0.23.0",
+    "langgraph-sdk>=0.1.0",
+    "mypy>=1.17.1",
 ]

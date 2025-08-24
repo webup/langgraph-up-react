@@ -1,16 +1,17 @@
-import pytest
-from langsmith import unit
-
 from react_agent import graph
 from react_agent.context import Context
 
 
-@pytest.mark.asyncio
-@unit
 async def test_react_agent_simple_passthrough() -> None:
+    """Test that the agent can answer a simple question about LangChain founder."""
     res = await graph.ainvoke(
         {"messages": [("user", "Who is the founder of LangChain?")]},  # type: ignore
         context=Context(system_prompt="You are a helpful AI assistant."),
     )
 
-    assert "harrison" in str(res["messages"][-1].content).lower()
+    # Should have user message + AI response
+    assert len(res["messages"]) >= 2
+
+    # Check that the response mentions Harrison (LangChain founder)
+    final_response = str(res["messages"][-1].content).lower()
+    assert "harrison" in final_response
