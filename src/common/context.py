@@ -22,15 +22,15 @@ class Context:
     )
 
     model: Annotated[str, {"__template_metadata__": {"kind": "llm"}}] = field(
-        default="anthropic/claude-3-5-sonnet-20240620",
+        default="qwen:qwen-plus",
         metadata={
             "description": "The name of the language model to use for the agent's main interactions. "
-            "Should be in the form: provider/model-name."
+            "Should be in the form: provider:model-name."
         },
     )
 
     max_search_results: int = field(
-        default=10,
+        default=5,
         metadata={
             "description": "The maximum number of search results to return for each search query."
         },

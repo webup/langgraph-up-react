@@ -11,10 +11,10 @@ from typing import Any, Callable, List, Optional, cast
 from langchain_tavily import TavilySearch
 from langgraph.runtime import get_runtime
 
-from react_agent.context import Context
+from common.context import Context
 
 
-async def search(query: str) -> Optional[dict[str, Any]]:
+async def web_search(query: str) -> Optional[dict[str, Any]]:
     """Search for general web results.
 
     This function performs a search using the Tavily search engine, which is designed
@@ -26,4 +26,4 @@ async def search(query: str) -> Optional[dict[str, Any]]:
     return cast(dict[str, Any], await wrapped.ainvoke({"query": query}))
 
 
-TOOLS: List[Callable[..., Any]] = [search]
+TOOLS: List[Callable[..., Any]] = [web_search]

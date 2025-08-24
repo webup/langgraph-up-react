@@ -13,9 +13,9 @@ dependencies = [
     "langchain-openai>=0.1.22",
     "langchain-anthropic>=0.1.23",
     "langchain>=0.2.14",
-    "langchain-fireworks>=0.1.7",
     "python-dotenv>=1.0.1",
     "langchain-tavily>=0.1",
+    "langchain-qwq>=0.2.1",
 ]
 
 
@@ -27,10 +27,11 @@ requires = ["setuptools>=73.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["langgraph.templates.react_agent", "react_agent"]
+packages = ["langgraph.templates.react_agent", "react_agent", "common"]
 [tool.setuptools.package-dir]
 "langgraph.templates.react_agent" = "src/react_agent"
 "react_agent" = "src/react_agent"
+"common" = "src/common"
 
 
 [tool.setuptools.package-data]
@@ -71,4 +72,5 @@ dev = [
     "pytest-asyncio>=0.23.0",
     "langgraph-sdk>=0.1.0",
     "mypy>=1.17.1",
+    "ruff>=0.9.10",
 ]
