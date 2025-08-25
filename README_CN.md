@@ -1,14 +1,14 @@
 # LangGraph ReAct Agent 模板
 
 [![Version](https://img.shields.io/badge/version-v0.1.0-blue.svg)](https://github.com/webup/langgraph-up-react)
+[![LangGraph](https://img.shields.io/badge/LangGraph-v0.6.6-blue.svg)](https://github.com/langchain-ai/langgraph)
 [![Build](https://github.com/webup/langgraph-up-react/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/webup/langgraph-up-react/actions/workflows/unit-tests.yml)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![README EN](https://img.shields.io/badge/README-English-blue.svg)](./README.md)
-[![README CN](https://img.shields.io/badge/README-中文-red.svg)](./README_CN.md)
 [![DeepWiki](https://img.shields.io/badge/Powered_by-DeepWiki-blue.svg)](https://deepwiki.com/webup/langgraph-up-react)
 [![Twitter](https://img.shields.io/twitter/follow/zhanghaili0610?style=social)](https://twitter.com/zhanghaili0610)
 
-基于 [LangGraph](https://github.com/langchain-ai/langgraph) 构建的 [ReAct 智能体](https://arxiv.org/abs/2210.03629) 模板，专为本地开发者设计，支持 [LangGraph Studio](https://github.com/langchain-ai/langgraph-studio)。ReAct 智能体是简洁的原型智能体，可以灵活扩展支持多种工具。
+基于 [LangGraph](https://github.com/langchain-ai/langgraph) 构建的 [ReAct 智能体](https://arxiv.org/abs/2210.03629) 模板，专为本地开发者设计，与 [LangGraph Studio](https://docs.langchain.com/langgraph-platform/quick-start-studio#use-langgraph-studio) 无缝协作。ReAct 智能体是简洁的原型智能体，可以灵活扩展支持多种工具。
 
 ![LangGraph Studio 界面截图](./static/studio_ui.png)
 
@@ -30,17 +30,25 @@
 
 ## v0.1.0 核心特性
 
-### 🚀 专为本地开发者设计
-- **通义千问系列模型**: 通过 langchain-qwq 包提供完整的 Qwen 模型支持，包括 Qwen-Plus、Qwen-Turbo、QwQ-32B、QvQ-72B
+### 🚀 专为国内开发者准备的模型平台
+- **通义千问系列模型**: 通过 `langchain-qwq` 包提供 Qwen 系列模型支持，包括 Qwen-Plus、Qwen-Turbo、QwQ-32B、QvQ-72B
 - **OpenAI 兼容**: 支持 GPT-4o、GPT-4o-mini 等模型，以及任何 OpenAI API 格式的提供商
 
-### 🛠 MCP 工具生态系统
-- **模型上下文协议**: 运行时动态外部工具加载
-- **DeepWiki MCP 服务器**: GitHub 仓库文档访问和问答功能
-- **Web 搜索**: 内置 Tavily 搜索集成
-- **可扩展**: 通过 `src/common/tools.py` 添加自定义工具
+### 🛠 Agent 工具集成生态系统
+- **模型上下文协议（MCP，Model Context Protocol）**: 运行时动态外部工具加载
+- **DeepWiki MCP 服务器**: 可选加载的 MCP 工具，用于 GitHub 仓库文档访问和问答功能
+- **Web 搜索**: 内置传统的 LangChain 工具（Tavily），用于互联网信息的检索
 
-### 📊 LangGraph 平台开发支持
+### 🆕 LangGraph v0.6 新特性
+
+> [!NOTE]
+> **LangGraph v0.6 新功能**: [LangGraph Context](https://docs.langchain.com/oss/python/context#context-overview) 替代了传统的 `config['configurable']` 模式。运行时上下文现在通过 `invoke/stream` 的 `context` 参数传递，提供了更清洁、更直观的智能体配置方式。
+
+- **上下文驱动配置**: 通过 `context` 参数传递运行时上下文，而不是 `config['configurable']`
+- **简化的 API**: 为智能体传递运行时配置提供更清洁的接口
+- **向后兼容**: 从旧配置模式的渐进迁移路径
+
+### 📊 LangGraph Platform 开发支持
 - **本地开发服务器**: 完整的 LangGraph Platform 开发环境
 - **70+ 测试用例**: 单元、集成和端到端测试覆盖，完整测试 DeepWiki 工具加载和执行
 - **ReAct 循环验证**: 确保正确的工具-模型交互
@@ -61,6 +69,13 @@ ReAct 智能体的工作流程：
 5. 重复步骤 2-4 直到能够提供最终答案
 
 智能体内置 Web 搜索功能和可选的 DeepWiki MCP 文档工具，可轻松扩展以支持各种用例的自定义工具。
+
+### 示例执行追踪
+
+查看这些 LangSmith 追踪记录，了解智能体的实际工作原理：
+
+- **[DeepWiki 文档查询](https://smith.langchain.com/public/d0594549-7363-46a7-b1a2-d85b55aaa2bd/r)** - 展示智能体使用 DeepWiki MCP 工具查询 GitHub 仓库文档
+- **[Web 搜索查询](https://smith.langchain.com/public/6ce92fd2-c0e4-409b-9ce2-02499ae16800/r)** - 演示 Tavily Web 搜索集成和推理循环
 
 ## 快速开始
 
@@ -92,17 +107,22 @@ cp .env.example .env
 1. 编辑 `.env` 文件，添加您的 API 密钥：
 
 ```bash
+# 必需：阿里云百炼平台模型
+REGION=prc  # 或 'international' 使用国内端点（默认）
+
 # 必需：搜索功能所需
 TAVILY_API_KEY=your_tavily_api_key
 
-# 可选：通义千问模型（默认）
+# 必需：如使用通义千问模型（默认）
 DASHSCOPE_API_KEY=your_dashscope_api_key
-REGION=prc  # 或 'international' 使用国内端点
 
-# 可选：OpenAI 模型
+# 可选：OpenAI 模型服务平台密钥
 OPENAI_API_KEY=your_openai_key
 
-# 可选：启用 DeepWiki 文档工具
+# 可选：如使用兼容 OpenAI 模型接口的服务平台
+OPENAI_API_BASE=your_openai_base
+
+# 可选：始终启用 DeepWiki 文档工具
 ENABLE_DEEPWIKI=true
 ```
 
@@ -110,52 +130,88 @@ ENABLE_DEEPWIKI=true
 
 ## 模型配置
 
-默认模型配置：
+模板使用 `qwen:qwen-turbo` 作为默认模型，定义在 [`src/common/context.py`](./src/common/context.py) 中。您可以通过三种方式配置不同的模型：
 
-```yaml
-model: qwen:qwen-turbo
+1. **运行时上下文**（编程使用推荐）
+2. **环境变量**
+3. **LangGraph Studio 助手配置**
+
+### 模型配置方法
+
+#### 1. 运行时上下文（推荐）
+
+使用新的 LangGraph v0.6 上下文参数在运行时配置模型：
+
+```python
+from common.context import Context
+from react_agent import graph
+
+# 通过上下文配置模型
+result = await graph.ainvoke(
+    {"messages": [("user", "您的问题")]},
+    context=Context(model="openai:gpt-4o-mini")
+)
 ```
 
-### 通义千问（推荐用于本地开发）
+#### 2. 环境变量
 
-通义千问模型提供强大的中文支持和高性价比：
-
-1. 在 [DashScope 控制台](https://dashscope.console.aliyun.com/) 获取 API 密钥
-2. 设置环境变量：
+在 `.env` 文件中设置 `MODEL` 环境变量：
 
 ```bash
-DASHSCOPE_API_KEY=your_dashscope_api_key
-REGION=prc  # 或 'international'
+MODEL=anthropic:claude-3.5-haiku
 ```
 
-3. 在 LangGraph Studio 中使用以下模型之一：
-   - `qwen:qwen-turbo` (快速，默认)
-   - `qwen:qwen-plus` (平衡性能)
-   - `qwen:qwq-32b-preview` (推理模型)
+#### 3. LangGraph Studio 助手配置
 
-### OpenAI
+在 LangGraph Studio 中，通过 [Assistant](https://docs.langchain.com/langgraph-platform/configuration-cloud#manage-assistants) 配置模型。创建或更新具有不同模型配置的助手，以便在不同设置之间轻松切换。
 
-使用 OpenAI 聊天模型：
+### 支持的模型格式
 
-1. 设置 API 密钥：
-```bash
-OPENAI_API_KEY=your_api_key
+**模型字符串格式**：`提供商:模型名称`（遵循 LangChain [`init_chat_model`](https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html#init-chat-model) 命名约定）
+
+```python
+# OpenAI 模型
+"openai:gpt-4o-mini"
+"openai:gpt-4o"
+
+# 通义千问模型（支持区域配置）
+"qwen:qwen-turbo"          # 默认模型
+"qwen:qwen-plus"           # 平衡性能
+"qwen:qwq-32b-preview"     # 推理模型
+"qwen:qvq-72b-preview"     # 多模态推理
+
+# Anthropic 模型
+"anthropic:claude-4-sonnet"
+"anthropic:claude-3.5-haiku"
 ```
 
-2. 在 LangGraph Studio 中更新模型为 `openai:gpt-4o-mini`
+### 各提供商 API 密钥设置
 
-### OpenAI 兼容提供商
-
-支持任何 OpenAI 兼容的 API：
-
-1. 设置 API 密钥和基础 URL：
+#### 通义千问（默认）
 ```bash
-OPENAI_API_KEY=your_provider_api_key
+DASHSCOPE_API_KEY=your-dashscope-api-key
+REGION=prc  # 或 'international' 使用国际端点
+```
+获取 API 密钥：[DashScope 控制台](https://dashscope.console.aliyun.com/)
+
+#### OpenAI
+```bash
+OPENAI_API_KEY=your-openai-api-key
+```
+获取 API 密钥：[OpenAI 平台](https://platform.openai.com/api-keys)
+
+#### Anthropic
+```bash
+ANTHROPIC_API_KEY=your-anthropic-api-key
+```
+获取 API 密钥：[Anthropic 控制台](https://console.anthropic.com/)
+
+#### OpenAI 兼容提供商
+```bash
+OPENAI_API_KEY=your-provider-api-key
 OPENAI_API_BASE=https://your-provider-api-base-url/v1
 ```
-2. 在 LangGraph Studio 中更新模型为 `openai:provider-model-name`
-
-这种灵活的架构允许您通过简单提供 API 密钥和基础 URL 使用任何 OpenAI 兼容的 API。
+支持 SiliconFlow、Together AI、Groq 和其他 OpenAI 兼容 API。
 
 ## 自定义说明
 
@@ -179,64 +235,40 @@ MCP_SERVERS = {
         "url": "https://mcp.deepwiki.com/mcp",
         "transport": "streamable_http",
     },
-    "your_mcp_server": {  # 添加您的 MCP 服务器
-        "url": "https://your-mcp-server.com/mcp",
-        "transport": "streamable_http",
-    }
+    # 示例：Context7 库文档服务
+    "context7": {
+        "url": "https://mcp.context7.com/sse",
+        "transport": "sse",
+    },
 }
 ```
 
 2. **添加服务器函数**：
 ```python
-async def get_your_mcp_tools() -> List[Callable[..., Any]]:
-    """从您的 MCP 服务器获取工具。"""
-    return await get_mcp_tools("your_mcp_server")
+async def get_context7_tools() -> List[Callable[..., Any]]:
+    """获取 Context7 文档工具。"""
+    return await get_mcp_tools("context7")
 ```
 
-3. **在上下文中启用** - 添加上下文标志并在 `get_tools()` 函数中加载工具。
-
-### 配置模型
-我们在 [`src/common/utils.py`](./src/common/utils.py) 中的关键扩展方法 `load_chat_model` 使用 LangChain 的 [`init_chat_model`](https://python.langchain.com/api_reference/langchain/chat_models/langchain.chat_models.base.init_chat_model.html#init-chat-model) 作为底层工具。
-
-**模型字符串格式**：`提供商:模型名称`（遵循 LangChain 命名约定）
-
-**示例**：
+3. **在上下文中启用** - 添加上下文标志并在 `get_tools()` 函数中加载工具：
 ```python
-# OpenAI 模型
-model = "openai:gpt-4o-mini"
-model = "openai:gpt-4o"
-
-# 通义千问模型（支持区域配置）
-model = "qwen:qwen-turbo"    # 默认模型
-model = "qwen:qwen-plus"     # 平衡性能
-model = "qwen:qwq-32b-preview"  # 推理模型
-model = "qwen:qvq-72b-preview"  # 多模态推理
-
-# Anthropic 模型
-model = "anthropic:claude-4-sonnet"
-model = "anthropic:claude-3.5-haiku"
+# 在 src/common/tools.py 中
+if context.enable_context7:
+    tools.extend(await get_context7_tools())
 ```
 
-**配置方式**：
-```bash
-# 通过环境变量设置
-MODEL=qwen:qwen-turbo
-
-# 或在 LangGraph Studio 可配置设置中
-```
+> [!TIP]
+> **Context7 示例**：MCP 配置中已包含注释的 Context7 服务器设置。Context7 提供最新的库文档和示例 - 只需取消注释配置并添加上下文标志即可启用。
 
 ### 修改系统提示
 编辑 [`src/common/prompts.py`](./src/common/prompts.py) 中的默认系统提示。
-
-### 更改模型
-在 LangGraph Studio 中或通过环境变量更新 `model` 配置。
 
 ## 开发工作流
 
 ### 启动开发服务器
 ```bash
-make dev        # 启动 LangGraph 开发服务器
-make dev_ui     # 启动带浏览器界面的服务器
+make dev        # 启动 LangGraph 开发服务器（uv run langgraph dev --no-browser)
+make dev_ui     # 启动带 LangGraph Studio Web UI 界面的服务器
 ```
 
 ### 测试
@@ -266,7 +298,7 @@ make format     # 使用 ruff 自动格式化代码
 - **`src/react_agent/`**: 核心智能体图和状态管理
 - **`src/common/`**: 共享组件（上下文、模型、工具、提示、MCP 集成）
 - **`tests/`**: 完整测试套件，包含 fixtures 和 MCP 集成覆盖
-- **`langgraph.json`**: LangGraph Studio 配置
+- **`langgraph.json`**: LangGraph Agent 的各项基础配置
 
 关键组件：
 - **`src/common/mcp.py`**: 外部文档源的 MCP 客户端管理

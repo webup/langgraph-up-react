@@ -82,7 +82,7 @@ make dev_ui                 # Start LangGraph development server with UI
 
 ## LangGraph Studio Integration
 
-This project is designed for LangGraph Studio. The `langgraph.json` config file defines:
+This project works seamlessly with LangGraph Studio. The `langgraph.json` config file defines:
 - Graph entry point: `./src/react_agent/graph.py:graph`
 - Environment file: `.env`
 - Dependencies: current directory (`.`)
