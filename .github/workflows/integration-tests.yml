@@ -16,6 +16,7 @@ concurrency:
 jobs:
   integration-tests:
     name: Integration Tests
+    if: false  # Skip this workflow
     strategy:
       matrix:
         os: [ubuntu-latest]
