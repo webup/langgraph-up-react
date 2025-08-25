@@ -82,3 +82,21 @@ class TestContextConfiguration:
             context = Context(model=full_model)
             assert context.model == full_model
             assert expected_name in full_model
+
+    @patch.dict(os.environ, {}, clear=True)
+    def test_deepwiki_disabled_by_default(self) -> None:
+        """Test that deepwiki is disabled by default."""
+        context = Context()
+        assert context.enable_deepwiki is False
+
+    def test_deepwiki_can_be_enabled(self) -> None:
+        """Test that deepwiki can be enabled explicitly."""
+        context = Context(enable_deepwiki=True)
+        assert context.enable_deepwiki is True
+
+    @patch.dict(os.environ, {"ENABLE_DEEPWIKI": "true"}, clear=False)
+    def test_deepwiki_env_var_loading(self) -> None:
+        """Test that deepwiki can be enabled via environment variable."""
+        context = Context()
+        # Environment variable should be converted to boolean when current value equals default
+        assert context.enable_deepwiki is True

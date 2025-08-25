@@ -6,13 +6,13 @@ Works with a chat model with tool calling support.
 from datetime import UTC, datetime
 from typing import Dict, List, Literal, cast
 
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, ToolMessage
 from langgraph.graph import StateGraph
 from langgraph.prebuilt import ToolNode
 from langgraph.runtime import Runtime
 
 from common.context import Context
-from common.tools import TOOLS
+from common.tools import get_tools
 from common.utils import load_chat_model
 from react_agent.state import InputState, State
 
@@ -33,8 +33,11 @@ async def call_model(
     Returns:
         dict: A dictionary containing the model's response message.
     """
+    # Get available tools based on configuration
+    available_tools = await get_tools()
+
     # Initialize the model with tool binding. Change the model or add more tools here.
-    model = load_chat_model(runtime.context.model).bind_tools(TOOLS)
+    model = load_chat_model(runtime.context.model).bind_tools(available_tools)
 
     # Format the system prompt. Customize this to change the agent's behavior.
     system_message = runtime.context.system_prompt.format(
@@ -64,13 +67,33 @@ async def call_model(
     return {"messages": [response]}
 
 
+async def dynamic_tools_node(
+    state: State, runtime: Runtime[Context]
+) -> Dict[str, List[ToolMessage]]:
+    """Execute tools dynamically based on configuration.
+
+    This function gets the available tools based on the current configuration
+    and executes the requested tool calls from the last message.
+    """
+    # Get available tools based on configuration
+    available_tools = await get_tools()
+
+    # Create a ToolNode with the available tools
+    tool_node = ToolNode(available_tools)
+
+    # Execute the tool node
+    result = await tool_node.ainvoke(state)
+
+    return cast(Dict[str, List[ToolMessage]], result)
+
+
 # Define a new graph
 
 builder = StateGraph(State, input_schema=InputState, context_schema=Context)
 
 # Define the two nodes we will cycle between
 builder.add_node(call_model)
-builder.add_node("tools", ToolNode(TOOLS))
+builder.add_node("tools", dynamic_tools_node)
 
 # Set the entrypoint as `call_model`
 # This means that this node is the first one called

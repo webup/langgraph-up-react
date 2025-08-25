@@ -7,9 +7,8 @@ all: help
 # TESTING
 ######################
 
-# Legacy test command (defaults to unit tests for backward compatibility)
-test:
-	python -m pytest tests/unit_tests/
+# Legacy test command (defaults to unit and integration tests for backward compatibility)
+test: test_unit test_integration
 
 # Specific test targets
 test_unit:

@@ -6,12 +6,16 @@ These tools are intended as free examples to get started. For production use,
 consider implementing more robust and specialized tools tailored to your needs.
 """
 
+import logging
 from typing import Any, Callable, List, Optional, cast
 
 from langchain_tavily import TavilySearch
 from langgraph.runtime import get_runtime
 
 from common.context import Context
+from common.mcp import get_deepwiki_tools
+
+logger = logging.getLogger(__name__)
 
 
 async def web_search(query: str) -> Optional[dict[str, Any]]:
@@ -26,4 +30,15 @@ async def web_search(query: str) -> Optional[dict[str, Any]]:
     return cast(dict[str, Any], await wrapped.ainvoke({"query": query}))
 
 
-TOOLS: List[Callable[..., Any]] = [web_search]
+async def get_tools() -> List[Callable[..., Any]]:
+    """Get all available tools based on configuration."""
+    tools = [web_search]
+
+    runtime = get_runtime(Context)
+
+    if runtime.context.enable_deepwiki:
+        deepwiki_tools = await get_deepwiki_tools()
+        tools.extend(deepwiki_tools)
+        logger.info(f"Loaded {len(deepwiki_tools)} deepwiki tools")
+
+    return tools

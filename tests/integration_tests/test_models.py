@@ -94,7 +94,7 @@ class TestModelIntegrationWorkflow:
         """Test workflow with Qwen model that uses tools."""
         with (
             patch("common.models.ChatQwen") as mock_chat_qwen,
-            patch("common.tools.web_search") as mock_tool,
+            patch("common.tools.get_tools") as mock_get_tools,
         ):
             # Mock the Qwen model
             mock_model = Mock()
@@ -122,8 +122,12 @@ class TestModelIntegrationWorkflow:
                 side_effect=[tool_call_response, final_response]
             )
 
-            # Mock tool execution
-            mock_tool.return_value = {"results": [{"content": "Test search result"}]}
+            # Create a proper async function mock for the tool
+            async def mock_web_search(query: str):
+                return {"results": [{"content": "Test search result"}]}
+
+            # Mock get_tools to return our mock function
+            mock_get_tools.return_value = [mock_web_search]
 
             # Create context and input
             context = Context(model="qwen:qwen-plus")

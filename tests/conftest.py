@@ -2,14 +2,11 @@
 
 import os
 from pathlib import Path
-from unittest.mock import AsyncMock, Mock
 
 import pytest
 from dotenv import load_dotenv
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import HumanMessage
 from langgraph_sdk import get_client
-
-from tests.test_data import TestModels, TestUrls
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -24,7 +21,7 @@ def load_env():
 
     # Ensure required environment variables are available for tests
     # You can add fallback values or skip tests if keys are missing
-    required_keys = ["OPENAI_API_KEY", "TAVILY_API_KEY"]
+    required_keys = ["DASHSCOPE_API_KEY", "TAVILY_API_KEY"]
     missing_keys = [key for key in required_keys if not os.getenv(key)]
 
     if missing_keys:
@@ -32,43 +29,9 @@ def load_env():
 
 
 @pytest.fixture
-def mock_model():
-    """Create a mock model for testing."""
-    mock = Mock()
-    mock.bind_tools.return_value = mock
-    mock.ainvoke = AsyncMock()
-    return mock
-
-
-@pytest.fixture
-def sample_ai_response():
-    """Create a sample AI response for testing."""
-    return AIMessage(
-        content="This is a test response from the AI model.", tool_calls=[]
-    )
-
-
-@pytest.fixture
-def sample_human_message():
-    """Create a sample human message for testing."""
-    return HumanMessage(content="This is a test message from human.")
-
-
-@pytest.fixture
-def test_context():
-    """Create a test context with common configuration."""
-    from common.context import Context
-
-    return Context(
-        model=TestModels.QWEN_PLUS,
-        system_prompt="You are a helpful AI assistant for testing.",
-    )
-
-
-@pytest.fixture
 async def langgraph_client():
     """Create a LangGraph client for e2e testing."""
-    return get_client(url=TestUrls.LANGGRAPH_LOCAL)
+    return get_client(url="http://127.0.0.1:2024")
 
 
 @pytest.fixture
@@ -78,14 +41,6 @@ async def assistant_id(langgraph_client):
     if not assistants:
         pytest.skip("No assistants found for e2e testing")
     return assistants[0]["assistant_id"]
-
-
-@pytest.fixture
-async def test_thread(langgraph_client):
-    """Create a test thread for e2e testing."""
-    thread = await langgraph_client.threads.create()
-    yield thread
-    # Cleanup could be added here if needed
 
 
 class TestHelpers:
