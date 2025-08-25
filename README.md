@@ -1,7 +1,7 @@
 # LangGraph ReAct Agent Template
 
 [![Version](https://img.shields.io/badge/version-v0.1.0-blue.svg)](https://github.com/webup/langgraph-up-react)
-[![Build](https://github.com/webup/langgraph-up-react/actions/workflows/integration-tests.yml/badge.svg)](https://github.com/webup/langgraph-up-react/actions/workflows/integration-tests.yml)
+[![Build](https://github.com/webup/langgraph-up-react/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/webup/langgraph-up-react/actions/workflows/unit-tests.yml)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![README EN](https://img.shields.io/badge/README-English-blue.svg)](./README.md)
 [![README CN](https://img.shields.io/badge/README-中文-red.svg)](./README_CN.md)
