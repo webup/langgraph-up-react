@@ -16,7 +16,7 @@ class Context:
         default=prompts.SYSTEM_PROMPT,
         metadata={
             "description": "The system prompt to use for the agent's interactions. "
-            "This prompt sets the context and behavior for the agent."
+            "This prompt sets the context and behavior for the agent.",
         },
     )
 
@@ -24,21 +24,24 @@ class Context:
         default="qwen:qwen-flash",
         metadata={
             "description": "The name of the language model to use for the agent's main interactions. "
-            "Should be in the form: provider:model-name."
+            "Should be in the form: provider:model-name.",
+            "json_schema_extra": {"langgraph_nodes": ["call_model"]},
         },
     )
 
     max_search_results: int = field(
         default=5,
         metadata={
-            "description": "The maximum number of search results to return for each search query."
+            "description": "The maximum number of search results to return for each search query.",
+            "json_schema_extra": {"langgraph_nodes": ["tools"]},
         },
     )
 
     enable_deepwiki: bool = field(
         default=False,
         metadata={
-            "description": "Whether to enable the DeepWiki MCP tool for accessing open source project documentation."
+            "description": "Whether to enable the DeepWiki MCP tool for accessing open source project documentation.",
+            "json_schema_extra": {"langgraph_nodes": ["tools"]},
         },
     )
 
