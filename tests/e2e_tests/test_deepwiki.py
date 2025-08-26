@@ -2,7 +2,6 @@
 
 import pytest
 
-from tests.test_data import TestModels
 
 
 @pytest.fixture
@@ -10,7 +9,6 @@ async def assistant_deepwiki_disabled(langgraph_client):
     """Create an assistant with deepwiki explicitly disabled."""
     config = {
         "configurable": {
-            "model": TestModels.QWEN_TURBO,
             "enable_deepwiki": False,
             "system_prompt": "You are a helpful AI assistant.",
         }
@@ -27,7 +25,6 @@ async def assistant_deepwiki_enabled(langgraph_client):
     """Create an assistant with deepwiki explicitly enabled."""
     config = {
         "configurable": {
-            "model": TestModels.QWEN_TURBO,
             "enable_deepwiki": True,
             "system_prompt": "You are a helpful AI assistant with access to deepwiki tools. When asked to use deepwiki tools, you must use them to get current documentation.",
         }
@@ -317,7 +314,6 @@ class TestDeepWikiStrictE2E:
         input_data = {
             "messages": [{"role": "human", "content": "Hello, please keep it brief"}],
             "configurable": {
-                "model": TestModels.QWEN_PLUS,
                 "enable_deepwiki": True,
                 "max_search_results": 3,
                 "system_prompt": "You are a helpful AI assistant with deepwiki access.",

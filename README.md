@@ -119,7 +119,7 @@ The primary [search tool](./src/common/tools.py) uses [Tavily](https://tavily.co
 
 ## Model Configuration
 
-The template uses `qwen:qwen-turbo` as the default model, defined in [`src/common/context.py`](./src/common/context.py). You can configure different models in three ways:
+The template uses `qwen:qwen-flash` as the default model, defined in [`src/common/context.py`](./src/common/context.py). You can configure different models in three ways:
 
 1. **Runtime Context** (recommended for programmatic usage)
 2. **Environment Variables** 
@@ -240,7 +240,7 @@ In LangGraph Studio, configure models through [Assistant management](https://doc
 "openai:gpt-4o"
 
 # Qwen models (with regional support)
-"qwen:qwen-turbo"          # Default model
+"qwen:qwen-flash"          # Default model
 "qwen:qwen-plus"           # Balanced performance
 "qwen:qwq-32b-preview"     # Reasoning model
 "qwen:qvq-72b-preview"     # Multimodal reasoning

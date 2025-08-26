@@ -60,7 +60,7 @@ make dev_ui                 # Start LangGraph development server with UI
 - **Model Providers**: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `DASHSCOPE_API_KEY` (for Qwen models)
 - **Optional**: `REGION` (set to `prc` or `international` for Qwen API endpoints)
 - **Optional**: `ENABLE_DEEPWIKI=true` to enable DeepWiki MCP documentation tools
-- **Default Model**: Uses `qwen:qwen-turbo` as default model (configurable via `MODEL` environment variable)
+- **Default Model**: Uses `qwen:qwen-flash` as default model (configurable via `MODEL` environment variable)
 
 ## Key Files and Their Purposes
 

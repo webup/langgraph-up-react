@@ -130,7 +130,7 @@ ENABLE_DEEPWIKI=true
 
 ## 模型配置
 
-模板使用 `qwen:qwen-turbo` 作为默认模型，定义在 [`src/common/context.py`](./src/common/context.py) 中。您可以通过三种方式配置不同的模型：
+模板使用 `qwen:qwen-flash` 作为默认模型，定义在 [`src/common/context.py`](./src/common/context.py) 中。您可以通过三种方式配置不同的模型：
 
 1. **运行时上下文**（编程使用推荐）
 2. **环境变量**
@@ -175,7 +175,7 @@ MODEL=anthropic:claude-3.5-haiku
 "openai:gpt-4o"
 
 # 通义千问模型（支持区域配置）
-"qwen:qwen-turbo"          # 默认模型
+"qwen:qwen-flash"          # 默认模型
 "qwen:qwen-plus"           # 平衡性能
 "qwen:qwq-32b-preview"     # 推理模型
 "qwen:qvq-72b-preview"     # 多模态推理

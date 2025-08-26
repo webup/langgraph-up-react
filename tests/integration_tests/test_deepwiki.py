@@ -7,7 +7,6 @@ import pytest
 
 from common.context import Context
 from common.mcp import MCP_SERVERS, clear_mcp_cache, get_deepwiki_tools
-from tests.test_data import TestModels
 
 
 class TestMCPIntegration:
@@ -29,7 +28,7 @@ class TestMCPIntegration:
     @patch.dict(os.environ, {"ENABLE_DEEPWIKI": "false"}, clear=True)
     def test_context_with_deepwiki_disabled(self) -> None:
         """Test context creation with deepwiki explicitly disabled."""
-        context = Context(enable_deepwiki=False, model=TestModels.QWEN_PLUS)
+        context = Context(enable_deepwiki=False)
         # Environment variable overrides explicit setting only if explicit value equals default
         # Since we explicitly set enable_deepwiki=False and default is False, no override should occur
         assert not context.enable_deepwiki
@@ -37,7 +36,7 @@ class TestMCPIntegration:
     @patch.dict(os.environ, {"ENABLE_DEEPWIKI": "true"}, clear=False)
     def test_context_with_deepwiki_enabled_via_env(self) -> None:
         """Test context creation with deepwiki enabled via environment."""
-        context = Context(model=TestModels.QWEN_PLUS)
+        context = Context()
         # Environment variable should be converted to boolean when current value equals default
         assert context.enable_deepwiki
 
@@ -57,13 +56,13 @@ class TestDeepWikiConfiguration:
 
     def test_deepwiki_context_field_exists(self) -> None:
         """Test that the enable_deepwiki field exists in Context."""
-        context = Context(model=TestModels.QWEN_PLUS)
+        context = Context()
         assert hasattr(context, "enable_deepwiki")
 
     def test_deepwiki_can_be_configured(self) -> None:
         """Test that deepwiki can be explicitly enabled and disabled."""
-        context_disabled = Context(enable_deepwiki=False, model=TestModels.QWEN_PLUS)
-        context_enabled = Context(enable_deepwiki=True, model=TestModels.QWEN_PLUS)
+        context_disabled = Context(enable_deepwiki=False)
+        context_enabled = Context(enable_deepwiki=True)
 
         # These should not be the same
         assert context_disabled.enable_deepwiki != context_enabled.enable_deepwiki
