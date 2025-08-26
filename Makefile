@@ -12,34 +12,34 @@ test: test_unit test_integration
 
 # Specific test targets
 test_unit:
-	python -m pytest tests/unit_tests/
+	uv run python -m pytest tests/unit_tests/
 
 test_integration:
-	python -m pytest tests/integration_tests/
+	uv run python -m pytest tests/integration_tests/
 
 test_e2e:
-	python -m pytest tests/e2e_tests/
+	uv run python -m pytest tests/e2e_tests/
 
 test_all:
-	python -m pytest tests/
+	uv run python -m pytest tests/
 
 # Watch mode for tests
 test_watch: test_watch_unit
 
 test_watch_unit:
-	python -m ptw --snapshot-update --now . -- -vv tests/unit_tests
+	uv run python -m ptw --snapshot-update --now . -- -vv tests/unit_tests
 
 test_watch_integration:
-	python -m ptw --snapshot-update --now . -- -vv tests/integration_tests
+	uv run python -m ptw --snapshot-update --now . -- -vv tests/integration_tests
 
 test_watch_e2e:
-	python -m ptw --snapshot-update --now . -- -vv tests/e2e_tests
+	uv run python -m ptw --snapshot-update --now . -- -vv tests/e2e_tests
 
 test_profile:
-	python -m pytest -vv tests/unit_tests/ --profile-svg
+	uv run python -m pytest -vv tests/unit_tests/ --profile-svg
 
 extended_tests:
-	python -m pytest --only-extended tests/unit_tests/
+	uv run python -m pytest --only-extended tests/unit_tests/
 
 ######################
 # DEVELOPMENT
@@ -66,33 +66,33 @@ lint_tests: PYTHON_FILES=tests
 lint_tests: MYPY_CACHE=.mypy_cache_test
 
 lint:
-	python -m ruff check .
-	python -m ruff format src --diff
-	python -m ruff check --select I src
-	python -m mypy --strict src
-	mkdir -p .mypy_cache && python -m mypy --strict src --cache-dir .mypy_cache
+	uv run python -m ruff check .
+	uv run python -m ruff format src --diff
+	uv run python -m ruff check --select I src
+	uv run python -m mypy --strict src
+	mkdir -p .mypy_cache && uv run python -m mypy --strict src --cache-dir .mypy_cache
 
 lint_diff lint_package:
-	python -m ruff check .
-	[ "$(PYTHON_FILES)" = "" ] || python -m ruff format $(PYTHON_FILES) --diff
-	[ "$(PYTHON_FILES)" = "" ] || python -m ruff check --select I $(PYTHON_FILES)
-	[ "$(PYTHON_FILES)" = "" ] || python -m mypy --strict $(PYTHON_FILES)
-	[ "$(PYTHON_FILES)" = "" ] || mkdir -p $(MYPY_CACHE) && python -m mypy --strict $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
+	uv run python -m ruff check .
+	[ "$(PYTHON_FILES)" = "" ] || uv run python -m ruff format $(PYTHON_FILES) --diff
+	[ "$(PYTHON_FILES)" = "" ] || uv run python -m ruff check --select I $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || uv run python -m mypy --strict $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || mkdir -p $(MYPY_CACHE) && uv run python -m mypy --strict $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
 lint_tests:
-	python -m ruff check tests --fix
-	python -m ruff format tests
+	uv run python -m ruff check tests --fix
+	uv run python -m ruff format tests
 	# Skip mypy for tests to allow more flexible typing
 
 format format_diff:
-	ruff format $(PYTHON_FILES)
-	ruff check --select I --fix $(PYTHON_FILES)
+	uv run ruff format $(PYTHON_FILES)
+	uv run ruff check --select I --fix $(PYTHON_FILES)
 
 spell_check:
-	codespell --toml pyproject.toml
+	uv run codespell --toml pyproject.toml
 
 spell_fix:
-	codespell --toml pyproject.toml -w
+	uv run codespell --toml pyproject.toml -w
 
 ######################
 # HELP
