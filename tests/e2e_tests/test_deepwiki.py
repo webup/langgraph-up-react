@@ -3,7 +3,6 @@
 import pytest
 
 
-
 @pytest.fixture
 async def assistant_deepwiki_disabled(langgraph_client):
     """Create an assistant with deepwiki explicitly disabled."""
