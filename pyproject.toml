@@ -1,6 +1,6 @@
 [project]
 name = "langgraph-up-react"
-version = "0.1.0"
+version = "0.1.1"
 description = "Starter template for making a custom Reasoning and Action agent (using tool calling) in LangGraph."
 authors = [
     { name = "William Fu-Hinthorn", email = "13333726+hinthornw@users.noreply.github.com" },
