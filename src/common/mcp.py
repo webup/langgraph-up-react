@@ -53,7 +53,7 @@ async def get_mcp_tools(server_name: str) -> List[Callable[..., Any]]:
         return _mcp_tools_cache[server_name]
 
     try:
-        client = await get_mcp_client()
+        client = await get_mcp_client({server_name: MCP_SERVERS[server_name]})
         if client is None:
             _mcp_tools_cache[server_name] = []
             return []
