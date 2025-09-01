@@ -30,16 +30,34 @@ MCP_SERVERS = {
 async def get_mcp_client(
     server_configs: Optional[Dict[str, Any]] = None,
 ) -> Optional[MultiServerMCPClient]:
-    """Get or initialize the global MCP client with given server configurations."""
+    """Get or initialize MCP client with given server configurations.
+
+    If server_configs is provided, creates a new client for those specific servers.
+    If no server_configs provided, uses the global client with all configured servers.
+    """
     global _mcp_client
 
-    if _mcp_client is None:
-        configs = server_configs or MCP_SERVERS
+    # If specific server configs provided, create a dedicated client for them
+    if server_configs is not None:
         try:
-            _mcp_client = MultiServerMCPClient(configs)  # pyright: ignore[reportArgumentType]
-            logger.info(f"Initialized MCP client with servers: {list(configs.keys())}")
+            client = MultiServerMCPClient(server_configs)  # pyright: ignore[reportArgumentType]
+            logger.info(
+                f"Created MCP client with servers: {list(server_configs.keys())}"
+            )
+            return client
         except Exception as e:
-            logger.error("Failed to initialize MCP client: %s", e)
+            logger.error("Failed to create MCP client: %s", e)
+            return None
+
+    # Otherwise, use global client for all servers (backward compatibility)
+    if _mcp_client is None:
+        try:
+            _mcp_client = MultiServerMCPClient(MCP_SERVERS)  # pyright: ignore[reportArgumentType]
+            logger.info(
+                f"Initialized global MCP client with servers: {list(MCP_SERVERS.keys())}"
+            )
+        except Exception as e:
+            logger.error("Failed to initialize global MCP client: %s", e)
             return None
     return _mcp_client
 
@@ -52,13 +70,21 @@ async def get_mcp_tools(server_name: str) -> List[Callable[..., Any]]:
     if server_name in _mcp_tools_cache:
         return _mcp_tools_cache[server_name]
 
+    # Check if server exists in configuration
+    if server_name not in MCP_SERVERS:
+        logger.warning(f"MCP server '{server_name}' not found in configuration")
+        _mcp_tools_cache[server_name] = []
+        return []
+
     try:
-        client = await get_mcp_client()
+        # Create server-specific client instead of using global singleton
+        server_config = {server_name: MCP_SERVERS[server_name]}
+        client = await get_mcp_client(server_config)
         if client is None:
             _mcp_tools_cache[server_name] = []
             return []
 
-        # Get all tools and filter by server (if tools have server metadata)
+        # Get all tools from this specific server
         all_tools = await client.get_tools()
         tools = cast(List[Callable[..., Any]], all_tools)
 
@@ -90,6 +116,14 @@ def add_mcp_server(name: str, config: Dict[str, Any]) -> None:
     MCP_SERVERS[name] = config
     # Clear client to force reinitialization with new config
     clear_mcp_cache()
+
+
+def remove_mcp_server(name: str) -> None:
+    """Remove an MCP server configuration."""
+    if name in MCP_SERVERS:
+        del MCP_SERVERS[name]
+        # Clear client to force reinitialization with new config
+        clear_mcp_cache()
 
 
 def clear_mcp_cache() -> None:
