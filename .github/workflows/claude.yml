@@ -1,5 +1,8 @@
 name: Claude Code
 
+env:
+  ANTHROPIC_BASE_URL: ${{ secrets.ANTHROPIC_BASE_URL }}
+
 on:
   issue_comment:
     types: [created]
