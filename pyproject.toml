@@ -3,7 +3,8 @@ name = "langgraph-up-react"
 version = "0.1.1"
 description = "Starter template for making a custom Reasoning and Action agent (using tool calling) in LangGraph."
 authors = [
-    { name = "William Fu-Hinthorn", email = "13333726+hinthornw@users.noreply.github.com" },
+    { name = "Haili Zhang", email = "haili.zhang@outlook.com" },
+    { name = "Claude", email = "claude@anthropic.com" },
 ]
 readme = "README.md"
 license = { text = "MIT" }

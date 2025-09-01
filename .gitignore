@@ -161,4 +161,8 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
+# LangGraph
 .langgraph_api
+
+# macOS
+.DS_Store
