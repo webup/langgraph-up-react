@@ -20,14 +20,14 @@ async def simple_question_example():
     print("=== 基础问答示例 ===")
     
     result = await graph.ainvoke(
-        {"messages": [("user", "2 + 2 等于几？")]},
+        {"messages": [("user", "今天北京天气怎么样？")]},
         context=Context(
             model="qwen:qwen-flash",  # 可以改为其他模型
             system_prompt="你是一个有用的AI助手。请简洁回答用户问题。"
         )
     )
     
-    print("用户问题: 2 + 2 等于几？")
+    print("用户问题: 今天北京天气怎么样？")
     print(f"AI回答: {result['messages'][-1].content}")
     print()
 
@@ -116,17 +116,17 @@ async def main():
         # 1. 基础问答
         await simple_question_example()
         
-        # 2. 搜索工具使用（需要TAVILY_API_KEY）
-        try:
-            await search_question_example()
-        except Exception as e:
-            print(f"搜索示例跳过（可能缺少API密钥）: {e}\n")
+        # # 2. 搜索工具使用（需要TAVILY_API_KEY）
+        # try:
+        #     await search_question_example()
+        # except Exception as e:
+        #     print(f"搜索示例跳过（可能缺少API密钥）: {e}\n")
         
-        # 3. 流式调用
-        await streaming_example()
+        # # 3. 流式调用
+        # await streaming_example()
         
-        # 4. 多轮对话
-        await conversation_example()
+        # # 4. 多轮对话
+        # await conversation_example()
         
     except Exception as e:
         print(f"运行出错: {e}")

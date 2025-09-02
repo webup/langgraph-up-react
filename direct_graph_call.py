@@ -4,10 +4,14 @@
 展示更多高级功能和配置选项
 """
 import asyncio
-from typing import Dict, Any
+from typing import Any, Dict
+
+from dotenv import load_dotenv
+
 from common.context import Context
 from react_agent import graph
 
+load_dotenv()
 
 async def custom_model_example():
     """自定义模型配置示例"""
@@ -15,8 +19,7 @@ async def custom_model_example():
     
     # 使用不同的模型（如果有相应API密钥）
     models_to_try = [
-        "qwen:qwen-flash",
-        "qwen:qwen-plus", 
+        "qwen:qwen-plus-2025-07-28",
         # "openai:gpt-4o-mini",  # 需要OPENAI_API_KEY
         # "anthropic:claude-3.5-haiku",  # 需要ANTHROPIC_API_KEY
     ]
@@ -24,7 +27,7 @@ async def custom_model_example():
     for model in models_to_try:
         try:
             result = await graph.ainvoke(
-                {"messages": [("user", "你好，请简单介绍一下自己")]},
+                {"messages": [("user", "今天北京天气怎么样？")]},
                 context=Context(
                     model=model,
                     system_prompt="你是一个友好的AI助手。"
@@ -152,10 +155,10 @@ async def main():
     
     try:
         await custom_model_example()
-        await deepwiki_tools_example()
-        await step_by_step_execution()
-        await error_handling_example()
-        await batch_processing_example()
+        # await deepwiki_tools_example()
+        # await step_by_step_execution()
+        # await error_handling_example()
+        # await batch_processing_example()
         
     except Exception as e:
         print(f"运行出错: {e}")

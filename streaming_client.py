@@ -47,7 +47,7 @@ async def streaming_with_tool_calls():
     """带工具调用的流式处理"""
     print("=== 带工具调用的流式处理 ===")
     
-    question = "请搜索并告诉我最新的Python版本信息"
+    question = "今天北京天气怎么样？"
     print(f"问题: {question}")
     print("处理过程:")
     
@@ -55,7 +55,7 @@ async def streaming_with_tool_calls():
     async for chunk in graph.astream(
         {"messages": [("user", question)]},
         context=Context(
-            model="qwen:qwen-flash",
+            model="qwen:qwen-plus-2025-07-28",
             system_prompt="你是一个技术专家，可以使用搜索工具获取最新信息。"
         )
     ):
@@ -76,7 +76,7 @@ async def streaming_with_tool_calls():
                     
                     # 处理工具结果
                     if hasattr(message, 'name'):  # ToolMessage
-                        print(f"  📊 工具 '{message.name}' 结果: {str(message.content)[:100]}...")
+                        print(f"  📊 工具 '{message.name}' 结果: {str(message.content)[:1000]}...")
             
             step += 1
     
@@ -247,7 +247,7 @@ async def main():
         print(f"✅ API密钥已配置: {api_key[:10]}...")
     
     try:
-        await basic_streaming()
+        # await basic_streaming()
         
         # 搜索工具示例（需要API密钥）
         try:
@@ -255,10 +255,10 @@ async def main():
         except Exception as e:
             print(f"工具调用示例跳过: {e}\n")
         
-        await streaming_with_interrupts()
-        await streaming_json_mode()
-        await concurrent_streaming()
-        await custom_stream_handler()
+        # await streaming_with_interrupts()
+        # await streaming_json_mode()
+        # await concurrent_streaming()
+        # await custom_stream_handler()
         
     except Exception as e:
         print(f"运行出错: {e}")

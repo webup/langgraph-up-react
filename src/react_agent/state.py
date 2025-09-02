@@ -43,6 +43,9 @@ class State(InputState):
     """Represents the complete state of the agent, extending InputState with additional attributes.
 
     This class can be used to store any information needed throughout the agent's lifecycle.
+
+    # https://blog.csdn.net/qq_41472205/article/details/144121369 langgraph设置默认递归限制
+    # https://langchain-ai.github.io/langgraph/how-tos/recursion-limit/
     """
 
     is_last_step: IsLastStep = field(default=False)
