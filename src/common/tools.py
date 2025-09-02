@@ -30,9 +30,27 @@ async def web_search(query: str) -> Optional[dict[str, Any]]:
     return cast(dict[str, Any], await wrapped.ainvoke({"query": query}))
 
 
+async def grade_query() -> str:
+    """Get student grade information.
+
+    Returns academic grades for various subjects including mathematics, 
+    English, sports, and political theory courses.
+    """
+    search_result = """
+    线性代数：90
+    高等数学：85
+    大学英语：88
+    体育：92
+    思想政治理论：89
+    军事训练：91
+    军事理论：88
+    """
+    return search_result.strip()
+
+
 async def get_tools() -> List[Callable[..., Any]]:
     """Get all available tools based on configuration."""
-    tools = [web_search]
+    tools = [web_search, grade_query]
 
     runtime = get_runtime(Context)
 

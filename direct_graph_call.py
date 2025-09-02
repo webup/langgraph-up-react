@@ -27,7 +27,7 @@ async def custom_model_example():
     for model in models_to_try:
         try:
             result = await graph.ainvoke(
-                {"messages": [("user", "今天北京天气怎么样？")]},
+                {"messages": [("user", "我的绩点是多少？")]},
                 context=Context(
                     model=model,
                     system_prompt="你是一个友好的AI助手。"
