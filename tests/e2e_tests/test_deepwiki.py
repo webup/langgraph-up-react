@@ -2,19 +2,19 @@
 
 import pytest
 
+from ..conftest import TEST_MODEL
+
 
 @pytest.fixture
 async def assistant_deepwiki_disabled(langgraph_client):
     """Create an assistant with deepwiki explicitly disabled."""
-    config = {
-        "configurable": {
-            "enable_deepwiki": False,
-            "system_prompt": "You are a helpful AI assistant.",
-        }
-    }
     assistant = await langgraph_client.assistants.create(
         graph_id="agent",
-        config=config,
+        context={
+            "model": TEST_MODEL,
+            "enable_deepwiki": False,
+            "system_prompt": "You are a helpful AI assistant.",
+        },
     )
     return assistant["assistant_id"]
 
@@ -22,15 +22,13 @@ async def assistant_deepwiki_disabled(langgraph_client):
 @pytest.fixture
 async def assistant_deepwiki_enabled(langgraph_client):
     """Create an assistant with deepwiki explicitly enabled."""
-    config = {
-        "configurable": {
-            "enable_deepwiki": True,
-            "system_prompt": "You are a helpful AI assistant with access to deepwiki tools. When asked to use deepwiki tools, you must use them to get current documentation.",
-        }
-    }
     assistant = await langgraph_client.assistants.create(
         graph_id="agent",
-        config=config,
+        context={
+            "model": TEST_MODEL,
+            "enable_deepwiki": True,
+            "system_prompt": "You are a helpful AI assistant with access to deepwiki tools. When asked to use deepwiki tools, you must use them to get current documentation.",
+        },
     )
     return assistant["assistant_id"]
 
@@ -312,11 +310,6 @@ class TestDeepWikiStrictE2E:
         # Test with deepwiki enabled configuration
         input_data = {
             "messages": [{"role": "human", "content": "Hello, please keep it brief"}],
-            "configurable": {
-                "enable_deepwiki": True,
-                "max_search_results": 3,
-                "system_prompt": "You are a helpful AI assistant with deepwiki access.",
-            },
         }
 
         # This should execute without errors even if deepwiki tools aren't used

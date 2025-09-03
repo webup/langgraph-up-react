@@ -1,9 +1,11 @@
-"""Custom model integrations for ReAct agent."""
+"""Qwen model integrations for ReAct agent."""
 
 import os
-from typing import Any, List, Optional, Union
+from typing import Any, Optional, Union
 
 from langchain_qwq import ChatQwen, ChatQwQ
+
+from ..utils import normalize_region
 
 
 def create_qwen_model(
@@ -19,7 +21,7 @@ def create_qwen_model(
         model_name: The model name (e.g., 'qwq-32b-preview', 'qwen-plus')
         api_key: DashScope API key (defaults to env var DASHSCOPE_API_KEY)
         base_url: Custom base URL for API (optional)
-        region: Region setting ('prc' for China, 'international' for global)
+        region: Region setting ('prc'/'cn' for China, 'international'/'en' for global)
                 Defaults to env var REGION
         **kwargs: Additional model parameters
 
@@ -36,10 +38,12 @@ def create_qwen_model(
 
     # Set base URL based on region if not explicitly provided
     if base_url is None and region:
-        if region.lower() == "prc":
+        # Normalize region aliases
+        normalized_region = normalize_region(region)
+        if normalized_region == "prc":
             # China mainland endpoint
             base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-        elif region.lower() == "international":
+        elif normalized_region == "international":
             # International endpoint
             base_url = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
 
@@ -55,15 +59,3 @@ def create_qwen_model(
         return ChatQwQ(**config)
     else:
         return ChatQwen(**config)
-
-
-def get_supported_qwen_models() -> List[str]:
-    """Get list of supported Qwen models."""
-    return [
-        "qwen-plus",
-        "qwen-turbo",
-        "qwen-max",
-        "qwq-32b-preview",
-        "qvq-72b-preview",
-        # Add more Qwen models as they become available
-    ]

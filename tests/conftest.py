@@ -8,6 +8,9 @@ from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage
 from langgraph_sdk import get_client
 
+# Default test model - use SiliconFlow to avoid API quota issues
+TEST_MODEL = "siliconflow:Qwen/Qwen3-8B"
+
 
 @pytest.fixture(scope="session", autouse=True)
 def load_env():
@@ -21,7 +24,7 @@ def load_env():
 
     # Ensure required environment variables are available for tests
     # You can add fallback values or skip tests if keys are missing
-    required_keys = ["DASHSCOPE_API_KEY", "TAVILY_API_KEY"]
+    required_keys = ["DASHSCOPE_API_KEY", "TAVILY_API_KEY", "SILICONFLOW_API_KEY"]
     missing_keys = [key for key in required_keys if not os.getenv(key)]
 
     if missing_keys:
@@ -36,11 +39,22 @@ async def langgraph_client():
 
 @pytest.fixture
 async def assistant_id(langgraph_client):
-    """Get the first available assistant ID for testing."""
-    assistants = await langgraph_client.assistants.search()
-    if not assistants:
-        pytest.skip("No assistants found for e2e testing")
-    return assistants[0]["assistant_id"]
+    """Create an assistant with SiliconFlow Qwen3-8B model for testing."""
+    assistant = await langgraph_client.assistants.create(
+        graph_id="agent",
+        context={
+            "model": TEST_MODEL,
+        },
+    )
+    assistant_id = assistant["assistant_id"]
+    
+    yield assistant_id
+    
+    # Cleanup
+    try:
+        await langgraph_client.assistants.delete(assistant_id)
+    except Exception:
+        pass  # Ignore cleanup errors
 
 
 class TestHelpers:

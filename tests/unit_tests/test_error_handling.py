@@ -70,7 +70,7 @@ class TestErrorHandling:
         with pytest.raises(ValueError):
             load_chat_model("unsupported:model-name")
 
-    @patch("common.models.ChatQwen")
+    @patch("common.models.qwen.ChatQwen")
     def test_model_initialization_failure(self, mock_chat_qwen) -> None:
         """Test handling of model initialization failures."""
         # Mock model initialization to raise an exception

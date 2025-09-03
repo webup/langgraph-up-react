@@ -357,7 +357,7 @@ class TestMCPServerFiltering:
         """
         Test that MCP server filtering works correctly.
 
-        This test verifies that get_mcp_tools(server_name) returns tools only 
+        This test verifies that get_mcp_tools(server_name) returns tools only
         from the specified server, not from all servers.
         """
         # Clean state
@@ -421,7 +421,7 @@ class TestMCPServerFiltering:
     async def test_real_mcp_server_filtering_deepwiki_vs_context7(self) -> None:
         """
         Test real MCP server filtering with DeepWiki and Context7 servers.
-        
+
         This test verifies that:
         1. DeepWiki and Context7 servers return different sets of tools
         2. Server-specific tool requests work correctly
@@ -430,27 +430,27 @@ class TestMCPServerFiltering:
         """
         # Clean state
         clear_mcp_cache()
-        
+
         # Add Context7 server configuration
         context7_config = {
             "url": "https://mcp.context7.com/sse",
             "transport": "sse",
         }
         add_mcp_server("context7", context7_config)
-        
+
         try:
             # Get tools from individual servers
             deepwiki_tools = await get_mcp_tools("deepwiki")
             context7_tools = await get_mcp_tools("context7")
-            
+
             # Get all tools
             all_tools = await get_all_mcp_tools()
-            
+
             # Basic structure validation
             assert isinstance(deepwiki_tools, list), "DeepWiki tools should be a list"
             assert isinstance(context7_tools, list), "Context7 tools should be a list"
             assert isinstance(all_tools, list), "All tools should be a list"
-            
+
             # Extract tool names for comparison
             def extract_tool_names(tools):
                 names = []
@@ -462,11 +462,11 @@ class TestMCPServerFiltering:
                     else:
                         names.append(str(tool))
                 return names
-            
+
             deepwiki_tool_names = extract_tool_names(deepwiki_tools)
             context7_tool_names = extract_tool_names(context7_tools)
             all_tool_names = extract_tool_names(all_tools)
-            
+
             # Verify DeepWiki tools (expected tools from DeepWiki server)
             if len(deepwiki_tools) > 0:
                 expected_deepwiki_tools = [
@@ -478,7 +478,7 @@ class TestMCPServerFiltering:
                     assert any(expected_tool in name for name in deepwiki_tool_names), (
                         f"Expected DeepWiki tool '{expected_tool}' not found in {deepwiki_tool_names}"
                     )
-            
+
             # Verify Context7 tools (expected tools from Context7 server)
             if len(context7_tools) > 0:
                 expected_context7_tools = ["resolve-library-id", "get-library-docs"]
@@ -486,66 +486,66 @@ class TestMCPServerFiltering:
                     assert any(expected_tool in name for name in context7_tool_names), (
                         f"Expected Context7 tool '{expected_tool}' not found in {context7_tool_names}"
                     )
-            
+
             # Verify server isolation: tools should be different between servers
             # (unless there's overlap, which is unlikely for these specific servers)
             if len(deepwiki_tools) > 0 and len(context7_tools) > 0:
                 # Check that each server has some unique tools
                 deepwiki_unique = set(deepwiki_tool_names) - set(context7_tool_names)
                 context7_unique = set(context7_tool_names) - set(deepwiki_tool_names)
-                
+
                 assert len(deepwiki_unique) > 0 or len(context7_unique) > 0, (
                     f"Servers should have some different tools. "
                     f"DeepWiki: {deepwiki_tool_names}, Context7: {context7_tool_names}"
                 )
-            
+
             # Verify all_tools contains tools from both servers
             if len(deepwiki_tools) > 0:
                 for tool_name in deepwiki_tool_names:
                     assert any(tool_name in all_name for all_name in all_tool_names), (
                         f"All tools should include DeepWiki tool '{tool_name}'"
                     )
-            
+
             if len(context7_tools) > 0:
                 for tool_name in context7_tool_names:
                     assert any(tool_name in all_name for all_name in all_tool_names), (
                         f"All tools should include Context7 tool '{tool_name}'"
                     )
-            
+
             # Verify that the total count makes sense
             expected_total = len(deepwiki_tools) + len(context7_tools)
             assert len(all_tools) >= expected_total, (
                 f"All tools count ({len(all_tools)}) should be at least the sum of individual servers "
                 f"({len(deepwiki_tools)} + {len(context7_tools)} = {expected_total})"
             )
-            
+
             # Test caching works per server
             cached_deepwiki_tools = await get_mcp_tools("deepwiki")
             cached_context7_tools = await get_mcp_tools("context7")
-            
+
             assert deepwiki_tools == cached_deepwiki_tools, (
                 "Caching should work for deepwiki server"
             )
             assert context7_tools == cached_context7_tools, (
                 "Caching should work for context7 server"
             )
-            
+
             # Test non-existent server still returns empty list
             nonexistent_tools = await get_mcp_tools("nonexistent_server")
             assert nonexistent_tools == [], (
                 "Non-existent server should return empty list"
             )
-            
+
         finally:
             # Clean up
             remove_mcp_server("context7")
             clear_mcp_cache()
-    
-    @pytest.mark.asyncio 
+
+    @pytest.mark.asyncio
     async def test_mcp_server_isolation_and_independence(self) -> None:
         """
         Test that MCP servers are properly isolated and independent.
-        
+
         This test ensures that:
         1. Each server has its own client instance
         2. Failures in one server don't affect others
@@ -554,39 +554,39 @@ class TestMCPServerFiltering:
         """
         # Clean state
         clear_mcp_cache()
-        
+
         # Add multiple test servers including one that will fail
         good_server_config = {
-            "url": "https://mcp.context7.com/sse", 
+            "url": "https://mcp.context7.com/sse",
             "transport": "sse",
         }
         bad_server_config = {
             "url": "https://nonexistent.invalid.domain.example/mcp",
             "transport": "streamable_http",
         }
-        
+
         add_mcp_server("context7", good_server_config)
         add_mcp_server("bad_server", bad_server_config)
-        
+
         try:
             # Get tools from good server should work
             context7_tools = await get_mcp_tools("context7")
             assert isinstance(context7_tools, list), "Context7 tools should be a list"
-            
+
             # Get tools from bad server should return empty list (not crash)
             bad_server_tools = await get_mcp_tools("bad_server")
             assert bad_server_tools == [], "Bad server should return empty list"
-            
+
             # Good server should still work after bad server failure
             context7_tools_again = await get_mcp_tools("context7")
             assert context7_tools == context7_tools_again, (
                 "Good server should still work after bad server failure"
             )
-            
+
             # All tools should include good server tools but handle bad server gracefully
             all_tools = await get_all_mcp_tools()
             assert isinstance(all_tools, list), "All tools should be a list"
-            
+
             # Should include DeepWiki tools (default server) and Context7 tools
             # but not fail due to bad server
             deepwiki_tools = await get_mcp_tools("deepwiki")
@@ -595,9 +595,9 @@ class TestMCPServerFiltering:
                 f"All tools should include tools from working servers. "
                 f"Got {len(all_tools)}, expected at least {expected_minimum}"
             )
-            
+
         finally:
             # Clean up
-            remove_mcp_server("context7") 
+            remove_mcp_server("context7")
             remove_mcp_server("bad_server")
             clear_mcp_cache()

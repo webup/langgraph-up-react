@@ -18,7 +18,7 @@ class TestModelIntegrationWorkflow:
     @patch.dict(os.environ, {"DASHSCOPE_API_KEY": "test-key"}, clear=False)
     async def test_qwen_model_workflow(self):
         """Test complete workflow with Qwen model provider."""
-        with patch("common.models.ChatQwen") as mock_chat_qwen:
+        with patch("common.models.qwen.ChatQwen") as mock_chat_qwen:
             # Mock the Qwen model
             mock_model = Mock()
             mock_chat_qwen.return_value = mock_model
@@ -93,7 +93,7 @@ class TestModelIntegrationWorkflow:
     async def test_qwen_model_with_tools_workflow(self):
         """Test workflow with Qwen model that uses tools."""
         with (
-            patch("common.models.ChatQwen") as mock_chat_qwen,
+            patch("common.models.qwen.ChatQwen") as mock_chat_qwen,
             patch("common.tools.get_tools") as mock_get_tools,
         ):
             # Mock the Qwen model
@@ -151,7 +151,7 @@ class TestModelIntegrationWorkflow:
     @patch.dict(os.environ, {"DASHSCOPE_API_KEY": "test-key"}, clear=False)
     async def test_qwq_model_workflow(self):
         """Test complete workflow with QwQ model provider uses ChatQwQ."""
-        with patch("common.models.ChatQwQ") as mock_chat_qwq:
+        with patch("common.models.qwen.ChatQwQ") as mock_chat_qwq:
             # Mock the QwQ model
             mock_model = Mock()
             mock_chat_qwq.return_value = mock_model
