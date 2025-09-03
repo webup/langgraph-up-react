@@ -1,4 +1,4 @@
-.PHONY: all format lint test test_unit test_integration test_e2e test_all test_watch test_watch_unit test_watch_integration test_watch_e2e test_profile extended_tests dev dev_ui
+.PHONY: all format lint test test_unit test_integration test_e2e test_all test_evaluations test_watch test_watch_unit test_watch_integration test_watch_e2e test_profile extended_tests dev dev_ui
 
 # Default target executed when no arguments are given to make.
 all: help
@@ -19,6 +19,9 @@ test_integration:
 
 test_e2e:
 	uv run python -m pytest tests/e2e_tests/
+
+test_evaluations:
+	uv run python -m pytest tests/evaluations/ -v
 
 test_all:
 	uv run python -m pytest tests/
@@ -109,6 +112,7 @@ help:
 	@echo 'test_unit                    - run unit tests only'
 	@echo 'test_integration             - run integration tests only'
 	@echo 'test_e2e                     - run e2e tests only'
+	@echo 'test_evaluations             - run graph trajectory evaluation tests'
 	@echo 'test_all                     - run all tests (unit + integration + e2e)'
 	@echo 'test_watch                   - run unit tests in watch mode'
 	@echo 'test_watch_unit              - run unit tests in watch mode'

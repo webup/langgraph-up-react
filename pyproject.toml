@@ -4,7 +4,7 @@ version = "0.1.2"
 description = "Starter template for making a custom Reasoning and Action agent (using tool calling) in LangGraph."
 authors = [
     { name = "Haili Zhang", email = "haili.zhang@outlook.com" },
-    { name = "Claude", email = "claude@anthropic.com" },
+    { name = "Claude Code", email = "claude-code@anthropic.com" },
 ]
 readme = "README.md"
 license = { text = "MIT" }
@@ -75,4 +75,6 @@ dev = [
     "langgraph-sdk>=0.1.0",
     "mypy>=1.17.1",
     "ruff>=0.9.10",
+    "openevals>=0.1.0",
+    "agentevals>=0.0.9",
 ]

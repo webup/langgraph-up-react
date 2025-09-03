@@ -1,6 +1,5 @@
 """Pytest configuration and shared fixtures."""
 
-import os
 from pathlib import Path
 
 import pytest
@@ -22,13 +21,8 @@ def load_env():
     if env_file.exists():
         load_dotenv(env_file)
 
-    # Ensure required environment variables are available for tests
-    # You can add fallback values or skip tests if keys are missing
-    required_keys = ["DASHSCOPE_API_KEY", "TAVILY_API_KEY", "SILICONFLOW_API_KEY"]
-    missing_keys = [key for key in required_keys if not os.getenv(key)]
-
-    if missing_keys:
-        pytest.skip(f"Missing required environment variables: {missing_keys}")
+    # Note: Individual tests will check for their specific required keys
+    # and skip appropriately. We don't globally skip all tests here.
 
 
 @pytest.fixture
