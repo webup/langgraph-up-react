@@ -9,9 +9,9 @@ RERANK_MODEL:
   API_KEY: "x"
 
 LLM:
-  API_KEY: "sk-6ebcf709c4064fbaa3f074f5a04eb485"
+  API_KEY: "sk-10e5062904c64c30b39b83858eb38611"
   BASE_URL: "https://dashscope.aliyuncs.com/compatible-mode/v1"
-  MODEL: "qwen3-235b-a22b-thinking-2507"
+  MODEL: "qwen-flash-2025-07-28"
 
   CHAT_PROMPT: |
     # 核心指令[最高优先级]
@@ -56,7 +56,7 @@ LLM:
       "query1": "改写版本1",
       "query2": "改写版本2", 
       "query3": "改写版本3",
-      "query6": "原始用户问题",
+      "query4": "原始用户问题",
     }}
 
     ## 执行要求

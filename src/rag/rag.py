@@ -46,7 +46,7 @@ class KB_Retrieval:
 
 
 if __name__ == "__main__":
-    from llm.llm_server import LLM
+    from llm_server import LLM
     llm = LLM()
     rewrite_result = llm.query_rewrite("降转政策")
     query_list = list(rewrite_result.values())[:-1]

@@ -4,7 +4,7 @@ import sys
 
 import numpy as np
 import requests
-from config.config import LLM as LLM_CONFIG
+from config import LLM as LLM_CONFIG
 from openai import OpenAI
 
 
@@ -19,6 +19,7 @@ class LLM:
     def query_rewrite(self, query: str):
         response = self.client.chat.completions.create(
             model=LLM_CONFIG.MODEL,
+            extra_body={"enable_thinking": False},
             messages=[
                 {'role': 'system', 'content': 'You are a helpful assistant.'},
                 {'role': 'user', 'content': LLM_CONFIG.REWRITE_PROMPT.format(user_input=query)}

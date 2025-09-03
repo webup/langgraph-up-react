@@ -47,10 +47,52 @@ async def grade_query() -> str:
     """
     return search_result.strip()
 
+async def KB_search(query: str) -> str:
+    """Search for knowledge base results using RAG pipeline.
+    
+    This function performs a multi-step search process:
+    1. Rewrites the input query to generate multiple search variants
+    2. Retrieves relevant document chunks from the knowledge base  
+    3. Uses LLM to generate a comprehensive answer based on retrieved context
+    
+    Args:
+        query: The user's search query
+    """
+    try:
+        from rag.llm_server import LLM
+        from rag.rag import KB_Retrieval
+        
+        # Initialize components
+        llm = LLM()
+        rag = KB_Retrieval()
+
+        # Rewrite query to improve retrieval
+        rewrite_result = llm.query_rewrite(query)
+        
+        # Extract query variants (excluding the last element which might be metadata)
+        query_list = list(rewrite_result.values())[:-1]
+        
+        # Ensure we have valid queries
+        if not query_list:
+            query_list = [query]  # Fallback to original query
+        
+        # Retrieve relevant context from knowledge base
+        context = rag.retrieve(query_list)
+        
+        # Generate final answer using the last query variant and retrieved context
+        final_query = query_list[-1] if query_list else query
+        result = llm.chat_completion(final_query, context)
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error in KB_search: {str(e)}")
+        return f"抱歉，知识库搜索过程中出现错误：{str(e)}"
+
 
 async def get_tools() -> List[Callable[..., Any]]:
     """Get all available tools based on configuration."""
-    tools = [web_search, grade_query]
+    tools = [grade_query, KB_search]
 
     runtime = get_runtime(Context)
 
