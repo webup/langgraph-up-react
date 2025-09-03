@@ -2,16 +2,22 @@ import json
 import os
 import sys
 
+import asyncio
 import numpy as np
+import aiohttp
 import requests
-from config import LLM as LLM_CONFIG
-from openai import OpenAI
+from .config import LLM as LLM_CONFIG
+from openai import AsyncOpenAI, OpenAI
 
 
 # 包装为类
 class LLM:
     def __init__(self):
         self.client = OpenAI(
+            api_key=LLM_CONFIG.API_KEY,
+            base_url=LLM_CONFIG.BASE_URL,
+        )
+        self.async_client = AsyncOpenAI(
             api_key=LLM_CONFIG.API_KEY,
             base_url=LLM_CONFIG.BASE_URL,
         )
@@ -27,8 +33,29 @@ class LLM:
         )
         return json.loads(response.choices[0].message.content)
 
+    async def async_query_rewrite(self, query: str):
+        response = await self.async_client.chat.completions.create(
+            model=LLM_CONFIG.MODEL,
+            extra_body={"enable_thinking": False},
+            messages=[
+                {'role': 'system', 'content': 'You are a helpful assistant.'},
+                {'role': 'user', 'content': LLM_CONFIG.REWRITE_PROMPT.format(user_input=query)}
+            ]
+        )
+        return json.loads(response.choices[0].message.content)
+
     def chat_completion(self, query: str, context: str):
         response = self.client.chat.completions.create(
+            model=LLM_CONFIG.MODEL,
+            messages=[
+                {'role': 'system', 'content': 'You are a helpful assistant.'},
+                {'role': 'user', 'content': LLM_CONFIG.CHAT_PROMPT.format(user_input=query, context=context)}
+            ]
+        )
+        return response.choices[0].message.content
+
+    async def async_chat_completion(self, query: str, context: str):
+        response = await self.async_client.chat.completions.create(
             model=LLM_CONFIG.MODEL,
             messages=[
                 {'role': 'system', 'content': 'You are a helpful assistant.'},
@@ -70,6 +97,13 @@ class Rerank_LLM():
         })
 
     def similarity(self, query: str, texts: list):
+        # 直接调用同步版本
+        return self._sync_similarity_in_thread(query, texts)
+
+    async def async_similarity(self, query: str, texts: list):
+        return await asyncio.to_thread(self._sync_similarity_in_thread, query, texts)
+
+    def _sync_similarity_in_thread(self, query: str, texts: list):
         try:
             # 尝试使用rerank专用接口
             url = f"{self.base_url}/rerank"
@@ -97,6 +131,7 @@ class Rerank_LLM():
             
         except Exception as e:
             print(f"Rerank error: {e}")
+            return [0.0] * len(texts)
         
 if __name__ == "__main__":
     llm = LLM()

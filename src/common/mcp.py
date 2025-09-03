@@ -19,6 +19,10 @@ MCP_SERVERS = {
         "url": "https://mcp.deepwiki.com/mcp",
         "transport": "streamable_http",
     },
+    "amap": {
+        "url": "https://mcp.amap.com/sse?key=01ec70f683d506b245b4d7f0c634f17f",
+        "transport": "sse"
+    }
     # Add more MCP servers here as needed
     # "context7": {
     #     "url": "https://mcp.context7.com/sse",

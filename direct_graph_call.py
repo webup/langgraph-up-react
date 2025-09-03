@@ -4,12 +4,21 @@
 展示更多高级功能和配置选项
 """
 import asyncio
+import sys
+from pathlib import Path
 from typing import Any, Dict
+
+# 添加 src 目录到 Python 路径
+project_root = Path(__file__).parent
+src_path = project_root / "src"
+if str(src_path) not in sys.path:
+    sys.path.insert(0, str(src_path))
 
 from dotenv import load_dotenv
 
 from common.context import Context
 from react_agent import graph
+from common.prompts import SYSTEM_PROMPT
 
 load_dotenv()
 
@@ -27,11 +36,9 @@ async def custom_model_example():
     for model in models_to_try:
         try:
             result = await graph.ainvoke(
-                {"messages": [("user", "降转政策")]},
-                context=Context(
-                    model=model,
-                    system_prompt="你是一个友好的AI助手。"
-                )
+                {"messages": [("user", "我的绩点是多少")]},
+                context=Context()
+
             )
             print(f"模型 {model}: {result['messages'][-1].content}")
         except Exception as e:
@@ -62,24 +69,21 @@ async def step_by_step_execution():
     """逐步执行示例 - 查看每个节点的输出"""
     print("=== 逐步执行示例 ===")
     
-    question = "Python中列表和元组的区别是什么？"
+    question = "辽宁省博物馆的经纬度是多少？"
     print(f"问题: {question}")
     print("执行过程:")
     
     step = 1
     async for chunk in graph.astream(
         {"messages": [("user", question)]},
-        context=Context(
-            model="qwen:qwen-flash",
-            system_prompt="你是一个Python专家，请详细解答问题。"
-        )
+        context=Context()
     ):
         for node_name, node_output in chunk.items():
             print(f"步骤 {step} - 节点 '{node_name}':")
             if "messages" in node_output:
                 for msg in node_output["messages"]:
                     if hasattr(msg, 'content') and msg.content:
-                        print(f"  内容: {msg.content[:100]}...")
+                        print(f"  内容: {msg.content[:1000]}...")
                     if hasattr(msg, 'tool_calls') and msg.tool_calls:
                         print(f"  工具调用: {len(msg.tool_calls)} 个")
             step += 1
@@ -154,9 +158,9 @@ async def main():
     print("LangGraph ReAct智能体高级调用示例\n")
     
     try:
-        await custom_model_example()
+        # await custom_model_example()
         # await deepwiki_tools_example()
-        # await step_by_step_execution()
+        await step_by_step_execution()
         # await error_handling_example()
         # await batch_processing_example()
         

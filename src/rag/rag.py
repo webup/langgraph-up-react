@@ -3,9 +3,9 @@ import os
 import sys
 import threading
 
-from config import RAGFLOW, RERANK_MODEL
-from llm_server import Rerank_LLM
-from ragflow import RAGFlowRetrieval
+from .config import RAGFLOW, RERANK_MODEL
+from .llm_server import Rerank_LLM
+from .ragflow import RAGFlowRetrieval
 
 
 class KB_Retrieval:

@@ -10,6 +10,7 @@ from typing import AsyncGenerator, Dict, Any
 from dotenv import load_dotenv
 from common.context import Context
 from react_agent import graph
+from common.prompts import SYSTEM_PROMPT
 
 # 显式加载.env文件
 load_dotenv()
@@ -47,17 +48,14 @@ async def streaming_with_tool_calls():
     """带工具调用的流式处理"""
     print("=== 带工具调用的流式处理 ===")
     
-    question = "今天北京天气怎么样？"
+    question = "我的绩点是多少？"
     print(f"问题: {question}")
     print("处理过程:")
     
     step = 1
     async for chunk in graph.astream(
         {"messages": [("user", question)]},
-        context=Context(
-            model="qwen:qwen-plus-2025-07-28",
-            system_prompt="你是一个技术专家，可以使用搜索工具获取最新信息。"
-        )
+        context=Context()
     ):
         for node_name, node_output in chunk.items():
             print(f"\n步骤 {step}: 节点 '{node_name}'")
