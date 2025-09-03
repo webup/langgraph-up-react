@@ -102,7 +102,7 @@ def _sync_kb_search(query: str) -> str:
 
 async def get_tools() -> List[Callable[..., Any]]:
     """Get all available tools based on configuration."""
-    tools = [grade_query, KB_search]
+    tools = [web_search, grade_query, KB_search]
 
     runtime = get_runtime(Context)
 
