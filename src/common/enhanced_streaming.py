@@ -99,12 +99,13 @@ class EnhancedStreaming:
                 
                 # 处理消息
                 if "messages" in node_output:
-                    await self._process_messages(
+                    async for message_event in self._process_messages(
                         node_output["messages"], 
                         node_name, 
                         step, 
                         show_intermediate
-                    )
+                    ):
+                        yield message_event
                     
                 # 如果是最终的call_model节点，返回流式文本
                 if node_name == "call_model" and "messages" in node_output:
