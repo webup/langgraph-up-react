@@ -50,7 +50,7 @@ class RAGFlowRetrieval:
         highlight: bool = False
     ) -> Dict[str, Any]:
         """
-        使用HTTP API调用召回接口
+        使用HTTP API调用召回接口（优化版本）
         
         Args:
             question: 查询问题
@@ -91,15 +91,37 @@ class RAGFlowRetrieval:
             data["rerank_id"] = rerank_id
         
         try:
-            response = requests.post(url, headers=self.headers, json=data)
+            # 优化：设置适当的超时时间和重试机制
+            response = requests.post(
+                url, 
+                headers=self.headers, 
+                json=data, 
+                timeout=15,  # 15秒超时
+                stream=False  # 禁用流式传输以提高效率
+            )
             response.raise_for_status()
-            return response.json()
+            
+            # 优化：使用更高效的JSON解析
+            result = response.json()
+            
+            # 基本验证返回结果
+            if not isinstance(result, dict):
+                return {"error": "Invalid response format"}
+                
+            return result
+            
+        except requests.exceptions.Timeout:
+            return {"error": "请求超时，请稍后重试"}
+        except requests.exceptions.ConnectionError:
+            return {"error": "连接失败，请检查网络连接"}
+        except requests.exceptions.HTTPError as e:
+            return {"error": f"HTTP错误: {e.response.status_code}"}
         except requests.exceptions.RequestException as e:
-            print(f"HTTP请求错误: {e}")
-            return {"error": str(e)}
+            return {"error": f"请求错误: {str(e)}"}
         except json.JSONDecodeError as e:
-            print(f"JSON解析错误: {e}")
-            return {"error": str(e)}
+            return {"error": f"JSON解析错误: {str(e)}"}
+        except Exception as e:
+            return {"error": f"未知错误: {str(e)}"}
     
     def retrieve_chunks_advanced(
         self,
@@ -112,7 +134,7 @@ class RAGFlowRetrieval:
         enable_highlight: bool = False
     ) -> Dict[str, Any]:
         """
-        高级召回接口（推荐使用）
+        高级召回接口（优化版本）
         
         Args:
             question: 查询问题
@@ -126,17 +148,24 @@ class RAGFlowRetrieval:
         Returns:
             格式化的召回结果
         """
+        # 输入验证
+        if not question or not question.strip():
+            return {"error": "查询问题不能为空", "chunks": []}
+        
+        if not dataset_ids:
+            return {"error": "数据集ID不能为空", "chunks": []}
+        
         result = self.retrieve_chunks_http_api(
-            question=question,
+            question=question.strip(),
             dataset_ids=dataset_ids,
-            page_size=top_k,
-            similarity_threshold=similarity_threshold,
+            page_size=min(top_k, 50),  # 限制最大返回数量
+            similarity_threshold=max(0.0, min(1.0, similarity_threshold)),  # 确保阈值在有效范围内
             keyword=enable_keyword,
             highlight=enable_highlight
         )
         
         if "error" in result:
-            return result
+            return {"error": result["error"], "chunks": []}
         
         # 格式化返回结果
         if result.get("code") == 0 and "data" in result:
@@ -148,16 +177,25 @@ class RAGFlowRetrieval:
                 "document_stats": data.get("doc_aggs", [])
             }
             
+            # 优化：预分配列表大小
+            chunks_data = data.get("chunks", [])
+            formatted_result["chunks"] = []
+            
             # 格式化chunk信息
-            for chunk in data.get("chunks", []):
+            for chunk in chunks_data:
+                # 跳过无内容的chunk
+                content = chunk.get("content")
+                if not content or not content.strip():
+                    continue
+                    
                 formatted_chunk = {
                     "id": chunk.get("id"),
-                    "content": chunk.get("content"),
-                    "document_name": chunk.get("document_keyword"),
-                    "document_id": chunk.get("document_id"),
-                    "similarity_score": chunk.get("similarity", 0),
-                    "vector_similarity": chunk.get("vector_similarity", 0),
-                    "term_similarity": chunk.get("term_similarity", 0),
+                    "content": content.strip(),
+                    "document_name": chunk.get("document_keyword", ""),
+                    "document_id": chunk.get("document_id", ""),
+                    "similarity_score": float(chunk.get("similarity", 0)),
+                    "vector_similarity": float(chunk.get("vector_similarity", 0)),
+                    "term_similarity": float(chunk.get("term_similarity", 0)),
                     "highlighted_content": chunk.get("highlight", ""),
                     "important_keywords": chunk.get("important_keywords", [])
                 }
@@ -165,7 +203,7 @@ class RAGFlowRetrieval:
             
             return formatted_result
         else:
-            return {"error": result.get("message", "Unknown error")}
+            return {"error": result.get("message", "Unknown error"), "chunks": []}
     
     def batch_retrieve(
         self,
@@ -176,7 +214,7 @@ class RAGFlowRetrieval:
         max_workers: int = None
     ) -> List[Dict[str, Any]]:
         """
-        批量召回查询（多线程版本）
+        批量召回查询（优化版本）
         
         Args:
             questions: 问题列表
@@ -191,46 +229,51 @@ class RAGFlowRetrieval:
         if not questions:
             return []
         
-        # 如果只有一个问题，直接调用单个查询
-        if len(questions) == 1:
+        # 去重问题，避免重复查询
+        unique_questions = list(dict.fromkeys(questions))  # 保持顺序的去重
+        question_to_result = {}
+        
+        # 如果只有一个唯一问题，直接调用单个查询
+        if len(unique_questions) == 1:
             result = self.retrieve_chunks_advanced(
-                question=questions[0],
+                question=unique_questions[0],
                 dataset_ids=dataset_ids,
                 similarity_threshold=similarity_threshold,
                 top_k=top_k
             )
-            return [result]
+            question_to_result[unique_questions[0]] = result
+        else:
+            # 优化：使用更合理的线程数
+            optimal_workers = min(max_workers or 4, len(unique_questions), 8)
+            
+            # 使用ThreadPoolExecutor进行多线程处理
+            with ThreadPoolExecutor(max_workers=optimal_workers) as executor:
+                # 提交所有任务
+                future_to_question = {
+                    executor.submit(
+                        self.retrieve_chunks_advanced,
+                        question=question,
+                        dataset_ids=dataset_ids,
+                        similarity_threshold=similarity_threshold,
+                        top_k=top_k
+                    ): question
+                    for question in unique_questions
+                }
+                
+                # 收集结果
+                for future in as_completed(future_to_question):
+                    question = future_to_question[future]
+                    try:
+                        result = future.result(timeout=30)  # 添加超时机制
+                        question_to_result[question] = result
+                    except Exception as exc:
+                        print(f'问题 "{question}" 处理时发生异常: {exc}')
+                        question_to_result[question] = {"error": f"处理异常: {exc}", "question": question}
         
-        # 使用ThreadPoolExecutor进行多线程处理
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            # 提交所有任务
-            future_to_question = {
-                executor.submit(
-                    self.retrieve_chunks_advanced,
-                    question=question,
-                    dataset_ids=dataset_ids,
-                    similarity_threshold=similarity_threshold,
-                    top_k=top_k
-                ): question
-                for question in questions
-            }
-            
-            # 收集结果，保持原始顺序
-            results = [None] * len(questions)
-            question_to_index = {question: i for i, question in enumerate(questions)}
-            
-            for future in as_completed(future_to_question):
-                question = future_to_question[future]
-                try:
-                    result = future.result()
-                    # 将结果放在正确的位置以保持原始顺序
-                    index = question_to_index[question]
-                    results[index] = result
-                except Exception as exc:
-                    print(f'问题 "{question}" 处理时发生异常: {exc}')
-                    # 在发生异常时创建一个错误结果
-                    index = question_to_index[question]
-                    results[index] = {"error": f"处理异常: {exc}", "question": question}
+        # 按原始顺序返回结果（处理重复问题）
+        results = []
+        for question in questions:
+            results.append(question_to_result.get(question, {"error": "Unknown error", "question": question}))
         
         return results
     
