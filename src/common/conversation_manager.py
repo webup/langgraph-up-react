@@ -174,47 +174,21 @@ class ChatInterface:
         context: Optional[Context] = None,
     ) -> AsyncGenerator[str, None]:
         """Send a message and stream the response."""
-        # Import here to avoid circular imports
-        from react_agent import graph
+        from .streaming_wrapper import StreamingWrapper
         
-        # Create session if not provided
-        if session_id is None:
-            session_id = await self.start_conversation()
+        # 创建流式包装器
+        wrapper = StreamingWrapper(base_delay=0.02, punct_delay=0.08)
         
-        # Ensure session exists
-        session = await self.conversation_manager.get_session(session_id)
-        if session is None:
-            session_id = await self.start_conversation()
+        # 定义异步调用函数
+        async def get_full_response():
+            return await self.chat(message, session_id, context)
         
-        # Add user message to session
-        user_message = HumanMessage(content=message)
-        await self.conversation_manager.add_message(session_id, user_message)
-        
-        # Prepare state for graph
-        state = await self.conversation_manager.prepare_state_for_graph(session_id)
-        
-        # Stream graph execution
-        context = context or self.default_context
-        final_state = None
-        
-        async for chunk in graph.astream(state, context=context):
-            for node_name, node_output in chunk.items():
-                if node_name == "call_model" and "messages" in node_output:
-                    message = node_output["messages"][-1]
-                    if hasattr(message, 'content') and message.content:
-                        yield str(message.content)
-                        final_state = chunk
-        
-        # Update session with final results if available
-        if final_state:
-            # Reconstruct the full state from the final chunk
-            all_messages = await self.conversation_manager.get_messages(session_id)
-            for node_output in final_state.values():
-                if "messages" in node_output:
-                    # Add new messages that aren't already in the session
-                    for msg in node_output["messages"]:
-                        if msg not in all_messages:
-                            await self.conversation_manager.add_message(session_id, msg)
+        # 使用包装器提供流式体验
+        async for chunk in StreamingWrapper.wrap_non_streaming_call(
+            get_full_response(), chunk_size=2
+        ):
+            yield chunk
+    
     
     async def get_conversation_history(self, session_id: str) -> List[Dict[str, Any]]:
         """Get conversation history in a readable format."""
