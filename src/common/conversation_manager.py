@@ -87,7 +87,7 @@ class ConversationManager:
             return session.messages
         return []
     
-    async def prepare_state_for_graph(self, session_id: str) -> Dict[str, Any]:
+    async def prepare_state_for_graph(self, session_id: str) -> State:
         """Prepare state for LangGraph execution."""
         messages = await self.get_messages(session_id)
         
@@ -95,7 +95,7 @@ class ConversationManager:
         if self.history_manager.should_compress_history(messages):
             messages = self.history_manager.compress_history(messages)
         
-        return {"messages": messages}
+        return State(messages=messages)
     
     async def update_session_from_state(self, session_id: str, state: Dict[str, Any]) -> None:
         """Update session with new state from LangGraph execution."""

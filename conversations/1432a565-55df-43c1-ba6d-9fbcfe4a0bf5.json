@@ -1,0 +1,317 @@
+{
+  "id": "1432a565-55df-43c1-ba6d-9fbcfe4a0bf5",
+  "messages": [
+    {
+      "content": "北京到上海的直线距离",
+      "additional_kwargs": {},
+      "response_metadata": {},
+      "type": "human",
+      "name": null,
+      "id": "f3e86c3b-9ee7-4d3e-af3f-5cd334112c22",
+      "example": false
+    },
+    {
+      "content": "",
+      "additional_kwargs": {
+        "tool_calls": [
+          {
+            "id": "call_aba75b3801fb4e82811ae9",
+            "function": {
+              "arguments": "{\"address\": \"北京\"}",
+              "name": "maps_geo"
+            },
+            "type": "function",
+            "index": 0
+          },
+          {
+            "id": "call_27a9aaf6f1a04e0abad649",
+            "function": {
+              "arguments": "{\"address\": \"上海\"}",
+              "name": "maps_geo"
+            },
+            "type": "function",
+            "index": 1
+          }
+        ],
+        "refusal": null
+      },
+      "response_metadata": {
+        "token_usage": {
+          "completion_tokens": 39,
+          "prompt_tokens": 2995,
+          "total_tokens": 3034,
+          "completion_tokens_details": null,
+          "prompt_tokens_details": null
+        },
+        "model_name": "qwen-plus-2025-07-14",
+        "system_fingerprint": null,
+        "id": "chatcmpl-be937d71-f30d-9727-b0ba-701e4a9a5a1c",
+        "service_tier": null,
+        "finish_reason": "tool_calls",
+        "logprobs": null
+      },
+      "type": "ai",
+      "name": null,
+      "id": "run--056b4b27-b4b8-408a-9889-a4f29a978f8e-0",
+      "example": false,
+      "tool_calls": [
+        {
+          "name": "maps_geo",
+          "args": {
+            "address": "北京"
+          },
+          "id": "call_aba75b3801fb4e82811ae9",
+          "type": "tool_call"
+        },
+        {
+          "name": "maps_geo",
+          "args": {
+            "address": "上海"
+          },
+          "id": "call_27a9aaf6f1a04e0abad649",
+          "type": "tool_call"
+        }
+      ],
+      "invalid_tool_calls": [],
+      "usage_metadata": {
+        "input_tokens": 2995,
+        "output_tokens": 39,
+        "total_tokens": 3034,
+        "input_token_details": {},
+        "output_token_details": {}
+      }
+    },
+    {
+      "content": "{\"results\":[{\"country\":\"中国\",\"province\":\"北京市\",\"city\":\"北京市\",\"citycode\":\"010\",\"district\":[],\"street\":[],\"number\":[],\"adcode\":\"110000\",\"location\":\"116.407387,39.904179\",\"level\":\"省\"}]}",
+      "additional_kwargs": {},
+      "response_metadata": {},
+      "type": "tool",
+      "name": "maps_geo",
+      "id": "41665812-cd27-439a-b60b-969f322c6ad4",
+      "tool_call_id": "call_aba75b3801fb4e82811ae9",
+      "artifact": null,
+      "status": "success"
+    },
+    {
+      "content": "{\"results\":[{\"country\":\"中国\",\"province\":\"上海市\",\"city\":\"上海市\",\"citycode\":\"021\",\"district\":[],\"street\":[],\"number\":[],\"adcode\":\"310000\",\"location\":\"121.473667,31.230525\",\"level\":\"省\"}]}",
+      "additional_kwargs": {},
+      "response_metadata": {},
+      "type": "tool",
+      "name": "maps_geo",
+      "id": "b1986087-931f-4c7e-bb8c-b1e29e6b4a49",
+      "tool_call_id": "call_27a9aaf6f1a04e0abad649",
+      "artifact": null,
+      "status": "success"
+    },
+    {
+      "content": "",
+      "additional_kwargs": {
+        "tool_calls": [
+          {
+            "id": "call_e67f8c82fdf846a7a3b769",
+            "function": {
+              "arguments": "{\"origins\": \"116.407387,39.904179\", \"destination\": \"121.473667,31.230525\", \"type\": \"0\"}",
+              "name": "maps_distance"
+            },
+            "type": "function",
+            "index": 0
+          }
+        ],
+        "refusal": null
+      },
+      "response_metadata": {
+        "token_usage": {
+          "completion_tokens": 70,
+          "prompt_tokens": 3189,
+          "total_tokens": 3259,
+          "completion_tokens_details": null,
+          "prompt_tokens_details": null
+        },
+        "model_name": "qwen-plus-2025-07-14",
+        "system_fingerprint": null,
+        "id": "chatcmpl-847182f0-ffd0-9bca-bc3b-8a945cb8729c",
+        "service_tier": null,
+        "finish_reason": "tool_calls",
+        "logprobs": null
+      },
+      "type": "ai",
+      "name": null,
+      "id": "run--c2a68da7-edbf-4fce-ba37-d6889eec5b4f-0",
+      "example": false,
+      "tool_calls": [
+        {
+          "name": "maps_distance",
+          "args": {
+            "origins": "116.407387,39.904179",
+            "destination": "121.473667,31.230525",
+            "type": "0"
+          },
+          "id": "call_e67f8c82fdf846a7a3b769",
+          "type": "tool_call"
+        }
+      ],
+      "invalid_tool_calls": [],
+      "usage_metadata": {
+        "input_tokens": 3189,
+        "output_tokens": 70,
+        "total_tokens": 3259,
+        "input_token_details": {},
+        "output_token_details": {}
+      }
+    },
+    {
+      "content": "{\"results\":[{\"origin_id\":\"1\",\"dest_id\":\"1\",\"distance\":\"1068490\",\"duration\":\"0\"}]}",
+      "additional_kwargs": {},
+      "response_metadata": {},
+      "type": "tool",
+      "name": "maps_distance",
+      "id": "4d42d4a1-be1f-4ba9-92ec-7dd1b565ba86",
+      "tool_call_id": "call_e67f8c82fdf846a7a3b769",
+      "artifact": null,
+      "status": "success"
+    },
+    {
+      "content": "北京到上海的直线距离约为1068.49公里。",
+      "additional_kwargs": {
+        "refusal": null
+      },
+      "response_metadata": {
+        "token_usage": {
+          "completion_tokens": 16,
+          "prompt_tokens": 3300,
+          "total_tokens": 3316,
+          "completion_tokens_details": null,
+          "prompt_tokens_details": null
+        },
+        "model_name": "qwen-plus-2025-07-14",
+        "system_fingerprint": null,
+        "id": "chatcmpl-33d49836-2661-9e3f-874d-1871a20463e7",
+        "service_tier": null,
+        "finish_reason": "stop",
+        "logprobs": null
+      },
+      "type": "ai",
+      "name": null,
+      "id": "run--7043a603-80ab-43e5-91bb-ad24b98504f0-0",
+      "example": false,
+      "tool_calls": [],
+      "invalid_tool_calls": [],
+      "usage_metadata": {
+        "input_tokens": 3300,
+        "output_tokens": 16,
+        "total_tokens": 3316,
+        "input_token_details": {},
+        "output_token_details": {}
+      }
+    },
+    {
+      "content": "我的成绩是多少",
+      "additional_kwargs": {},
+      "response_metadata": {},
+      "type": "human",
+      "name": null,
+      "id": "29cdb32b-ebb6-44c6-9fae-181410e9bf6f",
+      "example": false
+    },
+    {
+      "content": "",
+      "additional_kwargs": {
+        "tool_calls": [
+          {
+            "id": "call_24e106b738644638848fcb",
+            "function": {
+              "arguments": "{}",
+              "name": "grade_query"
+            },
+            "type": "function",
+            "index": 0
+          }
+        ],
+        "refusal": null
+      },
+      "response_metadata": {
+        "token_usage": {
+          "completion_tokens": 15,
+          "prompt_tokens": 3329,
+          "total_tokens": 3344,
+          "completion_tokens_details": null,
+          "prompt_tokens_details": null
+        },
+        "model_name": "qwen-plus-2025-07-14",
+        "system_fingerprint": null,
+        "id": "chatcmpl-40cb4c24-a2d5-93e1-9286-37c06e0f4b21",
+        "service_tier": null,
+        "finish_reason": "tool_calls",
+        "logprobs": null
+      },
+      "type": "ai",
+      "name": null,
+      "id": "run--bfd79e0a-67a4-4edb-b9b2-caeea07d6d13-0",
+      "example": false,
+      "tool_calls": [
+        {
+          "name": "grade_query",
+          "args": {},
+          "id": "call_24e106b738644638848fcb",
+          "type": "tool_call"
+        }
+      ],
+      "invalid_tool_calls": [],
+      "usage_metadata": {
+        "input_tokens": 3329,
+        "output_tokens": 15,
+        "total_tokens": 3344,
+        "input_token_details": {},
+        "output_token_details": {}
+      }
+    },
+    {
+      "content": "线性代数：90\n    高等数学：85\n    大学英语：88\n    体育：92\n    思想政治理论：89\n    军事训练：91\n    军事理论：88",
+      "additional_kwargs": {},
+      "response_metadata": {},
+      "type": "tool",
+      "name": "grade_query",
+      "id": "9b831ec5-43de-4317-9a1e-866a7c3567ab",
+      "tool_call_id": "call_24e106b738644638848fcb",
+      "artifact": null,
+      "status": "success"
+    },
+    {
+      "content": "同学你好！这是你目前的成绩信息：\n\n- 线性代数：90分\n- 高等数学：85分\n- 大学英语：88分\n- 体育：92分\n- 思想政治理论：89分\n- 军事训练：91分\n- 军事理论：88分\n\n如果你需要计算绩点或有其他学业相关问题，也可以告诉我，我会尽力为你提供帮助！",
+      "additional_kwargs": {
+        "refusal": null
+      },
+      "response_metadata": {
+        "token_usage": {
+          "completion_tokens": 102,
+          "prompt_tokens": 3419,
+          "total_tokens": 3521,
+          "completion_tokens_details": null,
+          "prompt_tokens_details": null
+        },
+        "model_name": "qwen-plus-2025-07-14",
+        "system_fingerprint": null,
+        "id": "chatcmpl-d19da75e-4049-9829-b2c3-1226da00ccfe",
+        "service_tier": null,
+        "finish_reason": "stop",
+        "logprobs": null
+      },
+      "type": "ai",
+      "name": null,
+      "id": "run--f7a961e8-716e-4678-893e-4f2a13298930-0",
+      "example": false,
+      "tool_calls": [],
+      "invalid_tool_calls": [],
+      "usage_metadata": {
+        "input_tokens": 3419,
+        "output_tokens": 102,
+        "total_tokens": 3521,
+        "input_token_details": {},
+        "output_token_details": {}
+      }
+    }
+  ],
+  "created_at": "2025-09-04T11:11:43.516603",
+  "updated_at": "2025-09-04T11:13:08.129054",
+  "metadata": {}
+}
