@@ -90,10 +90,10 @@ def _sync_kb_search(query: str) -> str:
         context = rag.retrieve(query_list)
         
         # Generate final answer using the last query variant and retrieved context
-        final_query = query_list[-1] if query_list else query
-        result = llm.chat_completion(final_query, context)
+        # final_query = query_list[-1] if query_list else query
+        # result = llm.chat_completion(final_query, context)
         
-        return result
+        return context
         
     except Exception as e:
         logger.error(f"Error in _sync_kb_search: {str(e)}")
