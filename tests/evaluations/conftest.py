@@ -7,13 +7,9 @@ def pytest_configure(config):
     """Configure pytest for evaluation tests."""
     # Register custom markers
     config.addinivalue_line(
-        "markers", 
-        "slow: marks tests as slow (deselect with '-m \"not slow\"')"
+        "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')"
     )
-    config.addinivalue_line(
-        "markers",
-        "evaluation: marks tests as evaluation tests"
-    )
+    config.addinivalue_line("markers", "evaluation: marks tests as evaluation tests")
 
 
 @pytest.fixture(scope="session")

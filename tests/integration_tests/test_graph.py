@@ -8,7 +8,7 @@ async def test_react_agent_simple_passthrough() -> None:
         {"messages": [("user", "Who is the founder of LangChain?")]},  # type: ignore
         context=Context(
             model="siliconflow:Qwen/Qwen3-8B",
-            system_prompt="You are a helpful AI assistant."
+            system_prompt="You are a helpful AI assistant.",
         ),
     )
 

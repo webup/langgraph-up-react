@@ -158,151 +158,149 @@ def test_load_chat_model_qwen_provider(mock_create_qwen):
 
 
 # SiliconFlow Tests
-@patch("common.models.siliconflow.ChatOpenAI")
+@patch("common.models.siliconflow.ChatSiliconFlow")
 @patch.dict(os.environ, {"REGION": ""}, clear=False)
-def test_create_siliconflow_model_basic(mock_chat_openai):
+def test_create_siliconflow_model_basic(mock_chat_siliconflow):
     """Test basic SiliconFlow model creation."""
     mock_instance = Mock()
-    mock_chat_openai.return_value = mock_instance
+    mock_chat_siliconflow.return_value = mock_instance
 
     result = create_siliconflow_model("Qwen/Qwen2.5-72B-Instruct", api_key="test-key")
 
     assert result == mock_instance
-    mock_chat_openai.assert_called_once_with(
-        model="Qwen/Qwen2.5-72B-Instruct", 
-        api_key="test-key", 
-        base_url="https://api.siliconflow.cn/v1"
+    mock_chat_siliconflow.assert_called_once_with(
+        model="Qwen/Qwen2.5-72B-Instruct",
+        api_key="test-key",
     )
 
 
-@patch("common.models.siliconflow.ChatOpenAI")
-def test_create_siliconflow_model_with_prc_region(mock_chat_openai):
+@patch("common.models.siliconflow.ChatSiliconFlow")
+def test_create_siliconflow_model_with_prc_region(mock_chat_siliconflow):
     """Test SiliconFlow model creation with PRC region."""
     mock_instance = Mock()
-    mock_chat_openai.return_value = mock_instance
+    mock_chat_siliconflow.return_value = mock_instance
 
     result = create_siliconflow_model(
         "Qwen/Qwen2.5-72B-Instruct", api_key="test-key", region="prc"
     )
 
     assert result == mock_instance
-    mock_chat_openai.assert_called_once_with(
+    mock_chat_siliconflow.assert_called_once_with(
         model="Qwen/Qwen2.5-72B-Instruct",
         api_key="test-key",
         base_url="https://api.siliconflow.cn/v1",
     )
 
 
-@patch("common.models.siliconflow.ChatOpenAI")
-def test_create_siliconflow_model_with_international_region(mock_chat_openai):
+@patch("common.models.siliconflow.ChatSiliconFlow")
+def test_create_siliconflow_model_with_international_region(mock_chat_siliconflow):
     """Test SiliconFlow model creation with international region."""
     mock_instance = Mock()
-    mock_chat_openai.return_value = mock_instance
+    mock_chat_siliconflow.return_value = mock_instance
 
     result = create_siliconflow_model(
         "Qwen/Qwen2.5-72B-Instruct", api_key="test-key", region="international"
     )
 
     assert result == mock_instance
-    mock_chat_openai.assert_called_once_with(
+    mock_chat_siliconflow.assert_called_once_with(
         model="Qwen/Qwen2.5-72B-Instruct",
         api_key="test-key",
         base_url="https://api.siliconflow.com/v1",
     )
 
 
-@patch("common.models.siliconflow.ChatOpenAI")
-def test_create_siliconflow_model_with_cn_alias(mock_chat_openai):
+@patch("common.models.siliconflow.ChatSiliconFlow")
+def test_create_siliconflow_model_with_cn_alias(mock_chat_siliconflow):
     """Test SiliconFlow model creation with 'cn' alias for PRC."""
     mock_instance = Mock()
-    mock_chat_openai.return_value = mock_instance
+    mock_chat_siliconflow.return_value = mock_instance
 
     result = create_siliconflow_model(
         "Qwen/Qwen2.5-72B-Instruct", api_key="test-key", region="cn"
     )
 
     assert result == mock_instance
-    mock_chat_openai.assert_called_once_with(
+    mock_chat_siliconflow.assert_called_once_with(
         model="Qwen/Qwen2.5-72B-Instruct",
         api_key="test-key",
         base_url="https://api.siliconflow.cn/v1",
     )
 
 
-@patch("common.models.siliconflow.ChatOpenAI")
-def test_create_siliconflow_model_with_en_alias(mock_chat_openai):
+@patch("common.models.siliconflow.ChatSiliconFlow")
+def test_create_siliconflow_model_with_en_alias(mock_chat_siliconflow):
     """Test SiliconFlow model creation with 'en' alias for international."""
     mock_instance = Mock()
-    mock_chat_openai.return_value = mock_instance
+    mock_chat_siliconflow.return_value = mock_instance
 
     result = create_siliconflow_model(
         "Qwen/Qwen2.5-72B-Instruct", api_key="test-key", region="en"
     )
 
     assert result == mock_instance
-    mock_chat_openai.assert_called_once_with(
+    mock_chat_siliconflow.assert_called_once_with(
         model="Qwen/Qwen2.5-72B-Instruct",
         api_key="test-key",
         base_url="https://api.siliconflow.com/v1",
     )
 
 
-@patch("common.models.siliconflow.ChatOpenAI")
+@patch("common.models.siliconflow.ChatSiliconFlow")
 @patch.dict(os.environ, {"SILICONFLOW_API_KEY": "env-key", "REGION": ""})
-def test_create_siliconflow_model_with_env_key(mock_chat_openai):
+def test_create_siliconflow_model_with_env_key(mock_chat_siliconflow):
     """Test SiliconFlow model creation using environment variable for API key."""
     mock_instance = Mock()
-    mock_chat_openai.return_value = mock_instance
+    mock_chat_siliconflow.return_value = mock_instance
 
     result = create_siliconflow_model("Qwen/Qwen2.5-72B-Instruct")
 
     assert result == mock_instance
-    mock_chat_openai.assert_called_once_with(
-        model="Qwen/Qwen2.5-72B-Instruct", 
-        api_key="env-key", 
-        base_url="https://api.siliconflow.cn/v1"
+    mock_chat_siliconflow.assert_called_once_with(
+        model="Qwen/Qwen2.5-72B-Instruct",
+        api_key="env-key",
     )
 
 
-@patch("common.models.siliconflow.ChatOpenAI")
+@patch("common.models.siliconflow.ChatSiliconFlow")
 @patch.dict(os.environ, {"SILICONFLOW_API_KEY": "env-key", "REGION": "prc"})
-def test_create_siliconflow_model_with_env_region_prc(mock_chat_openai):
+def test_create_siliconflow_model_with_env_region_prc(mock_chat_siliconflow):
     """Test SiliconFlow model creation using environment variable for region (PRC)."""
     mock_instance = Mock()
-    mock_chat_openai.return_value = mock_instance
+    mock_chat_siliconflow.return_value = mock_instance
 
     result = create_siliconflow_model("Qwen/Qwen2.5-72B-Instruct")
 
     assert result == mock_instance
-    mock_chat_openai.assert_called_once_with(
+    mock_chat_siliconflow.assert_called_once_with(
         model="Qwen/Qwen2.5-72B-Instruct",
         api_key="env-key",
         base_url="https://api.siliconflow.cn/v1",
     )
 
 
-@patch("common.models.siliconflow.ChatOpenAI")
+@patch("common.models.siliconflow.ChatSiliconFlow")
 @patch.dict(os.environ, {"SILICONFLOW_API_KEY": "env-key", "REGION": "international"})
-def test_create_siliconflow_model_with_env_region_international(mock_chat_openai):
+def test_create_siliconflow_model_with_env_region_international(mock_chat_siliconflow):
     """Test SiliconFlow model creation using environment variable for region (international)."""
     mock_instance = Mock()
-    mock_chat_openai.return_value = mock_instance
+    mock_chat_siliconflow.return_value = mock_instance
 
     result = create_siliconflow_model("Qwen/Qwen2.5-72B-Instruct")
 
     assert result == mock_instance
-    mock_chat_openai.assert_called_once_with(
+    mock_chat_siliconflow.assert_called_once_with(
         model="Qwen/Qwen2.5-72B-Instruct",
         api_key="env-key",
         base_url="https://api.siliconflow.com/v1",
     )
 
 
-@patch("common.models.siliconflow.ChatOpenAI")
-def test_create_siliconflow_model_with_custom_base_url(mock_chat_openai):
+@patch("common.models.siliconflow.ChatSiliconFlow")
+def test_create_siliconflow_model_with_custom_base_url(mock_chat_siliconflow):
     """Test SiliconFlow model creation with custom base URL."""
     mock_instance = Mock()
-    mock_chat_openai.return_value = mock_instance
+    mock_chat_siliconflow.return_value = mock_instance
 
     custom_url = "https://custom.example.com/v1"
     result = create_siliconflow_model(
@@ -310,7 +308,7 @@ def test_create_siliconflow_model_with_custom_base_url(mock_chat_openai):
     )
 
     assert result == mock_instance
-    mock_chat_openai.assert_called_once_with(
+    mock_chat_siliconflow.assert_called_once_with(
         model="Qwen/Qwen2.5-72B-Instruct",
         api_key="test-key",
         base_url=custom_url,

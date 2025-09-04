@@ -6,7 +6,9 @@ import pytest
 
 # Test Models
 QWEN3_8B = "siliconflow:Qwen/Qwen3-8B"  # Traditional text model
-GLM_Z1 = "siliconflow:THUDM/GLM-Z1-9B-0414"  # Reasoning model (supports function calling)
+GLM_Z1 = (
+    "siliconflow:THUDM/GLM-Z1-9B-0414"  # Reasoning model (supports function calling)
+)
 
 # Test Data
 STUDIO_UI_PATH = os.path.join(
@@ -288,9 +290,9 @@ async def test_glm_z1_reasoning_task(langgraph_client) -> None:
             "feet",
             "heads",
         ]
-        assert any(
-            term in final_response for term in expected_terms
-        ), f"Expected reasoning terms in response: {final_response[:200]}..."
+        assert any(term in final_response for term in expected_terms), (
+            f"Expected reasoning terms in response: {final_response[:200]}..."
+        )
 
     finally:
         await langgraph_client.assistants.delete(assistant_id)
@@ -338,8 +340,6 @@ async def test_glm4_complex_reasoning_task(langgraph_client) -> None:
 
     finally:
         await langgraph_client.assistants.delete(assistant_id)
-
-
 
 
 @pytest.mark.e2e
@@ -394,5 +394,3 @@ async def test_glm4_reasoning_chain(langgraph_client) -> None:
 
     finally:
         await langgraph_client.assistants.delete(assistant_id)
-
-

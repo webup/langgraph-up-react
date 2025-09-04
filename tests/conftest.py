@@ -41,9 +41,9 @@ async def assistant_id(langgraph_client):
         },
     )
     assistant_id = assistant["assistant_id"]
-    
+
     yield assistant_id
-    
+
     # Cleanup
     try:
         await langgraph_client.assistants.delete(assistant_id)

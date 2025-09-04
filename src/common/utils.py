@@ -10,10 +10,10 @@ from langchain_qwq import ChatQwen, ChatQwQ
 
 def normalize_region(region: str) -> Optional[str]:
     """Normalize region aliases to standard values.
-    
+
     Args:
         region: Region string to normalize
-        
+
     Returns:
         Normalized region ('prc' or 'international') or None if invalid
     """
@@ -54,11 +54,13 @@ def load_chat_model(
     # Handle Qwen models specially with dashscope integration
     if provider_lower == "qwen":
         from .models import create_qwen_model
+
         return create_qwen_model(model)
 
     # Handle SiliconFlow models
     if provider_lower == "siliconflow":
         from .models import create_siliconflow_model
+
         return create_siliconflow_model(model)
 
     # Use standard langchain initialization for other providers
