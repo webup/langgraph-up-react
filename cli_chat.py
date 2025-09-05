@@ -45,14 +45,11 @@ class CommandLineChat:
 
         self.current_session_id: Optional[str] = None
         self.session_name: Optional[str] = None
-        self.streaming_mode: bool = True  # 默认启用流式模式
-        self.verbose_mode: bool = False  # 默认关闭详细模式
 
     async def start_chat(self):
         """开始命令行对话"""
-        print("🌊 重庆大学 AI 助手 - 流式版")
+        print("🤖 重庆大学 AI 助手")
         print("=" * 55)
-        print("🎆 新特性: 支持实时流式对话，可看到AI的思考过程！")
         print("欢迎使用重庆大学智能助手！我可以帮您查询：")
         print("• 📚 重庆大学相关政策、通知、规定")
         print("• 🎓 学校历史、文化、师资力量")
@@ -67,8 +64,6 @@ class CommandLineChat:
         print("  - switch <id> - 切换会话")
         print("  - delete <id> - 删除会话")
         print("  - clear - 清空当前会话")
-        print(f"  - 🌊 stream - 切换流式模式 [当前: {'流式' if self.streaming_mode else '非流式'}]")
-        print(f"  - 🔍 debug - 切换调试模式 [当前: {'开启' if self.verbose_mode else '关闭'}]")
         print("  - help - 查看详细帮助")
         print("=" * 55)
 
@@ -111,14 +106,6 @@ class CommandLineChat:
                 elif user_input.lower() in ["help", "帮助"]:
                     self.show_help()
                     continue
-                
-                elif user_input.lower() in ["stream", "流式"]:
-                    self._toggle_streaming_mode()
-                    continue
-                
-                elif user_input.lower() in ["debug", "调试", "verbose"]:
-                    self._toggle_verbose_mode()
-                    continue
 
                 elif not user_input:
                     print("❓ 请输入您的问题...")
@@ -128,17 +115,10 @@ class CommandLineChat:
                 await self._ensure_session()
 
                 # 调用 AI 助手
-                print(f"\n{session_prompt}🤖 AI: ", end="", flush=True)
-                
-                if self.streaming_mode:
-                    # 流式对话（带可选的调试信息）
-                    await self._handle_streaming_response(user_input, session_prompt)
-                else:
-                    # 非流式对话
-                    response = await self.chat_interface.chat(
-                        user_input, session_id=self.current_session_id
-                    )
-                    print(response)
+                response = await self.chat_interface.chat(
+                    user_input, session_id=self.current_session_id
+                )
+                print(f"\n{session_prompt}🤖 AI: {response}")
 
             except KeyboardInterrupt:
                 print("\n\n👋 检测到 Ctrl+C，正在退出...")
@@ -232,112 +212,7 @@ class CommandLineChat:
             return f"{self.current_session_id[:8]}"
         return "无会话"
 
-    async def _handle_streaming_response(self, user_input: str, session_prompt: str):
-        """处理流式响应"""
-        import time
-        
-        try:
-            if self.verbose_mode:
-                print("\r" + " " * 50 + "\r", end="")  # 清除之前的内容
-                print(f"🔍 调试模式: 显示AI推理过程")
-                print(f"{session_prompt}🤖 AI处理过程:")
-            else:
-                # 显示思考指示器
-                print("🤔 AI正在思考...", end="", flush=True)
-                await asyncio.sleep(0.5)
-            
-            # 使用流式接口（带调试模式）
-            response_chunks = []
-            start_time = time.time()
-            final_response_started = False
-            
-            async for chunk in self.chat_interface.stream_chat(
-                user_input, 
-                session_id=self.current_session_id,
-                verbose=self.verbose_mode  # 传递详细模式标志
-            ):
-                if chunk:
-                    # 检查是否是调试信息（包含换行符的通常是调试信息）
-                    if self.verbose_mode and ("\n🧠" in chunk or "\n🔧" in chunk or "\n💭" in chunk or "\n📊" in chunk):
-                        print(chunk, end="", flush=True)
-                    else:
-                        # 这是最终回答的文本
-                        if not final_response_started and not self.verbose_mode:
-                            # 清除思考指示器，显示AI回答提示
-                            print("\r" + " " * 50 + "\r", end="")
-                            print(f"{session_prompt}🤖 AI: ", end="", flush=True)
-                            final_response_started = True
-                        elif not final_response_started and self.verbose_mode:
-                            print(f"\n{session_prompt}🤖 AI最终回答: ", end="", flush=True)
-                            final_response_started = True
-                        
-                        print(chunk, end="", flush=True)
-                        response_chunks.append(chunk)
-            
-            # 流式结束后换行
-            if final_response_started:
-                print()
-            
-            # 显示统计信息
-            if response_chunks and not self.verbose_mode:
-                end_time = time.time()
-                duration = end_time - start_time
-                total_chars = sum(len(chunk) for chunk in response_chunks)
-                chars_per_second = total_chars / duration if duration > 0 else 0
-                
-                print(f"💫 {total_chars} 字符 · {duration:.1f}秒 · {chars_per_second:.0f} 字符/秒", end="")
-                await asyncio.sleep(2)
-                print("\r" + " " * 100 + "\r", end="", flush=True)
-            elif not response_chunks:
-                print("⚠️  没有收到任何响应内容")
-                
-        except Exception as e:
-            print(f"\n⚠️  流式对话错误: {e}")
-            print("🔄 正在回退到非流式模式...")
-            try:
-                # 回退到非流式模式
-                response = await self.chat_interface.chat(
-                    user_input, session_id=self.current_session_id
-                )
-                print(f"\n{session_prompt}🤖 AI: {response}")
-            except Exception as fallback_error:
-                print(f"⚠️  回退也失败: {fallback_error}")
 
-    def _toggle_streaming_mode(self):
-        """切换流式模式"""
-        self.streaming_mode = not self.streaming_mode
-        mode_text = "🌊 流式" if self.streaming_mode else "📝 非流式"
-        print(f"⚙️  已切换到 {mode_text} 模式")
-        
-        if self.streaming_mode:
-            print("✨ 流式模式特点：")
-            print("   • 实时显示AI思考和生成过程")
-            print("   • 更好的交互体验，可看到实时进展")
-            print("   • 适合长文本回答和复杂问题")
-        else:
-            print("📝 非流式模式特点：")
-            print("   • 等待完整回答后一次性显示")
-            print("   • 适合短回答和快速查询")
-            print("   • 网络不稳定时更适用")
-    
-    def _toggle_verbose_mode(self):
-        """切换详细模式"""
-        self.verbose_mode = not self.verbose_mode
-        mode_text = "🔍 开启" if self.verbose_mode else "💤 关闭"
-        print(f"⚙️  调试模式已 {mode_text}")
-        
-        if self.verbose_mode:
-            print("🔍 调试模式特点：")
-            print("   • 显示AI的每个推理步骤")
-            print("   • 显示工具调用和结果")
-            print("   • 显示节点处理过程")
-            print("   • 适合理解AI工作原理和调试问题")
-            print("⚠️  注意: 调试模式会显示大量信息，适合开发和学习")
-        else:
-            print("💤 标准模式特点：")
-            print("   • 只显示最终回答")
-            print("   • 界面简洁清晰")
-            print("   • 适合日常使用")
 
     def show_help(self):
         """显示帮助信息"""
@@ -361,24 +236,11 @@ class CommandLineChat:
         print("  • delete <session_id> - 删除指定会话")
         print("  • clear/清空 - 清空当前会话")
         print()
-        print("🌊 流式功能：")
-        print("  • stream/流式 - 切换流式/非流式对话模式")
-        print("  • 流式模式：实时显示AI回答过程")
-        print("  • 非流式模式：等待完整回答后显示")
-        print()
-        print("🔍 调试功能：")
-        print("  • debug/调试 - 切换调试/标准显示模式")
-        print("  • 调试模式：显示AI推理步骤、工具调用过程")
-        print("  • 标准模式：只显示最终回答，界面简洁")
-        print("  • 💡 tip: 调试模式可以帮助理解AI的工作原理")
-        print()
         print("💡 会话功能：")
         print("  • 自动保存对话历史到文件")
         print("  • 支持多个独立会话")
         print("  • 智能历史压缩，防止上下文过长")
         print("  • 会话ID支持前缀匹配")
-        print(f"  当前对话模式: {'🌊 流式' if self.streaming_mode else '📝 非流式'}")
-        print(f"  当前调试模式: {'🔍 开启' if self.verbose_mode else '💤 关闭'}")
         print("=" * 40)
 
 

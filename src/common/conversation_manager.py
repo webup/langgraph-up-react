@@ -174,63 +174,10 @@ class ChatInterface:
         context: Optional[Context] = None,
         verbose: bool = False,
     ) -> AsyncGenerator[str, None]:
-        """Send a message and stream the response with optional node visualization."""
-        # Import here to avoid circular imports
-        from react_agent import graph
-        from .enhanced_streaming import EnhancedStreaming
-        
-        # Create session if not provided
-        if session_id is None:
-            session_id = await self.start_conversation()
-        
-        # Ensure session exists
-        session = await self.conversation_manager.get_session(session_id)
-        if session is None:
-            session_id = await self.start_conversation()
-        
-        # Add user message to session
-        user_message = HumanMessage(content=message)
-        await self.conversation_manager.add_message(session_id, user_message)
-        
-        # Prepare state for graph
-        state = await self.conversation_manager.prepare_state_for_graph(session_id)
-        
-        # Use enhanced streaming
-        context = context or self.default_context
-        enhanced_streaming = EnhancedStreaming(verbose=verbose, show_timing=False)
-        final_state = None
-        
-        # Stream with node visualization
-        graph_stream = graph.astream(state, context=context)
-        
-        async for event in enhanced_streaming.stream_with_node_info(
-            graph_stream, 
-            show_intermediate=verbose
-        ):
-            event_type = event.get("type")
-            content = event.get("content", "")
-            
-            # Only yield text content for the CLI
-            if event_type in ["final_response_chunk"]:
-                yield content
-            elif event_type in ["node_start", "thinking", "tool_call", "tool_result"] and verbose:
-                # For verbose mode, yield formatted node information
-                yield f"\n{content}\n"
-        
-        # We need to manually update the session since we're bypassing the normal chat flow
-        # Get the final state from the graph execution
-        try:
-            # Re-run to get the final result for session storage
-            final_result = await graph.ainvoke(state, context=context)
-            if "messages" in final_result:
-                # Add new messages that aren't already in the session
-                all_messages = await self.conversation_manager.get_messages(session_id)
-                for msg in final_result["messages"]:
-                    if msg not in all_messages:
-                        await self.conversation_manager.add_message(session_id, msg)
-        except Exception as e:
-            # If final state capture fails, that's okay - the conversation still happened
-            pass
+        """Send a message and get the response (non-streaming version for compatibility)."""
+        # This now just wraps the regular chat method for backward compatibility
+        response = await self.chat(message, session_id, context)
+        yield response
     
     
     async def get_conversation_history(self, session_id: str) -> List[Dict[str, Any]]:
@@ -284,12 +231,6 @@ async def quick_chat(message: str, session_id: Optional[str] = None) -> tuple[st
 
 async def quick_stream_chat(
     message: str, session_id: Optional[str] = None
-) -> tuple[AsyncGenerator[str, None], str]:
-    """Quick streaming chat function that returns (stream, session_id)."""
-    interface = get_default_chat_interface()
-    
-    if session_id is None:
-        session_id = await interface.start_conversation()
-    
-    stream = interface.stream_chat(message, session_id)
-    return stream, session_id
+) -> tuple[str, str]:
+    """Quick chat function that returns (response, session_id) - streaming removed."""
+    return await quick_chat(message, session_id)
