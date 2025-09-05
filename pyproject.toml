@@ -78,4 +78,6 @@ dev = [
     "ruff>=0.9.10",
     "openevals>=0.1.0",
     "agentevals>=0.0.9",
+    "langsmith[pytest]>=0.4.16",
+    "pytest-xdist>=3.8.0",
 ]

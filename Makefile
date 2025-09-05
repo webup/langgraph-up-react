@@ -23,6 +23,9 @@ test_e2e:
 test_evaluations:
 	uv run python -m pytest tests/evaluations/ -v
 
+test_eval_graph:
+	uv run python -m pytest -n auto tests/evaluations/graph.py -v
+
 test_all:
 	uv run python -m pytest tests/
 
@@ -113,6 +116,7 @@ help:
 	@echo 'test_integration             - run integration tests only'
 	@echo 'test_e2e                     - run e2e tests only'
 	@echo 'test_evaluations             - run graph trajectory evaluation tests'
+	@echo 'test_eval_graph              - run graph evaluations in parallel (fast)'
 	@echo 'test_all                     - run all tests (unit + integration + e2e)'
 	@echo 'test_watch                   - run unit tests in watch mode'
 	@echo 'test_watch_unit              - run unit tests in watch mode'

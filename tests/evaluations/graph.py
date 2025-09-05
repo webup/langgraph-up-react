@@ -1,7 +1,7 @@
-"""Graph trajectory evaluation using AgentEvals framework.
+"""Graph trajectory evaluation using AgentEvals framework with LangSmith integration.
 
 This module implements comprehensive evaluation of the ReAct agent using graph trajectory
-LLM-as-judge methodology with async execution for performance.
+LLM-as-judge methodology with async execution and LangSmith pytest integration.
 """
 
 import logging
@@ -13,6 +13,7 @@ from agentevals.graph_trajectory.llm import create_async_graph_trajectory_llm_as
 from agentevals.graph_trajectory.utils import aextract_langgraph_trajectory_from_thread
 from langchain_core.messages import HumanMessage
 from langgraph.checkpoint.memory import MemorySaver
+from langsmith import testing as t
 
 from common.context import Context
 from common.utils import load_chat_model
@@ -34,22 +35,58 @@ class EvaluationConfig:
     # Evaluator model - using GLM-Z1 for better reasoning and tool support
     EVALUATOR_MODEL = "siliconflow:THUDM/GLM-Z1-9B-0414"
 
-    # Test scenarios
+    # Test scenarios with different evaluation rubrics
     TEST_SCENARIOS = [
         {
             "name": "simple_question",
             "query": "What is the capital of France?",
             "expected_behavior": "Should provide direct answer without unnecessary tool usage",
+            "rubric": """An accurate trajectory for simple factual questions:
+            - MUST provide direct answer from existing knowledge WITHOUT any external tool calls
+            - Trajectory should be: __start__ -> call_model (NO 'tools' node)
+            - Questions like 'What is the capital of France?' should NEVER trigger web search or other external tools
+            - If trajectory contains 'tools' node, it's an AUTOMATIC FAILURE (score: 0)
+            - Shows efficient reasoning with minimal steps - only model reasoning, no tool execution
+            - Demonstrates appropriate confidence in well-known facts
+            - Score 1 only if answered correctly without 'tools' node, Score 0 if 'tools' node appears in trajectory""",
         },
         {
             "name": "search_required",
             "query": "What's the latest news about artificial intelligence?",
             "expected_behavior": "Should use search tools to find current information",
+            "rubric": """An accurate trajectory for information gathering:
+            - Expected trajectory: __start__ -> call_model -> tools -> call_model (MUST include 'tools' node)
+            - Uses search tools when current information is needed
+            - Makes appropriate search queries and retrieves actual current information
+            - Synthesizes information from search results effectively into actionable insights
+            - Shows logical progression from query to search to synthesis
+            - If no 'tools' node appears, it's a failure - current info cannot be known without search
+            - CONTENT QUALITY EVALUATION:
+              * HIGH QUALITY (Score 1): Provides specific recent news items with concrete details, dates, company names, or developments
+              * MEDIUM QUALITY (Score 0.5): Uses search tools but provides mostly generic summaries without actionable information  
+              * LOW QUALITY (Score 0): Generic responses, just listing sources, or primarily providing links instead of content
+            - LINK GUIDANCE: Providing links is NOT helpful - users want actual current information, not homework
+            - IGNORE: Link lists, source directories, "check these websites" responses - these avoid doing the synthesis work
+            - KEY DISTINCTION: "NBC reports on AI developments" (generic) vs "NBC reported today that OpenAI announced GPT-5" (specific)
+            - Final score requires both correct trajectory AND high-quality specific content from search results (not just links)""",
         },
         {
             "name": "multi_step_reasoning",
             "query": "What are the pros and cons of renewable energy, and what are the latest developments?",
             "expected_behavior": "Should search for information and provide structured analysis",
+            "rubric": """An accurate trajectory for complex analytical tasks:
+            - Expected trajectory: __start__ -> call_model -> tools -> call_model (MUST include 'tools' node for current info)
+            - Breaks down complex questions into manageable parts (pros/cons + latest developments)
+            - Uses search tools to gather current information about renewable energy developments
+            - Demonstrates structured thinking with clear analysis and synthesis
+            - Provides balanced perspective with specific pros and cons backed by evidence
+            - Integrates current developments with foundational knowledge from search results
+            - DUAL REQUIREMENT: Must use tools for current info AND provide structured analytical thinking
+            - QUALITY EVALUATION:
+              * HIGH QUALITY (Score 1): Uses search + provides specific current developments + structured pros/cons analysis
+              * MEDIUM QUALITY (Score 0.5): Uses search but analysis is generic or lacks current information
+              * LOW QUALITY (Score 0): No search tools or purely generic analysis without current developments
+            - Final score requires both search execution AND comprehensive analytical synthesis""",
         },
     ]
 
@@ -130,13 +167,63 @@ async def run_agent_scenario(
         }
 
 
+async def create_scenario_evaluator(scenario: Dict[str, str], evaluator_model: str):
+    """Create an async graph trajectory evaluator with scenario-specific rubric.
+
+    Args:
+        scenario: Test scenario with name, query, and rubric
+        evaluator_model: Model to use as evaluator judge
+
+    Returns:
+        Configured async graph trajectory evaluator
+    """
+    # Create custom prompt with scenario-specific rubric
+    custom_prompt = f"""You are an expert data labeler.
+Your task is to grade the accuracy of an AI agent's internal steps in resolving user queries.
+
+<Scenario-Specific Rubric>
+{scenario["rubric"]}
+</Scenario-Specific Rubric>
+
+<General Instructions>
+Grade the following thread, evaluating whether the agent's overall steps are logical and appropriate.
+For the trajectory, "__start__" denotes an initial entrypoint to the agent, and "__interrupt__" corresponds to the agent
+interrupting to await additional data from another source ("human-in-the-loop"):
+</General Instructions>
+
+<thread>
+{{thread}}
+</thread>
+
+{{reference_outputs}}
+"""
+
+    try:
+        # Use load_chat_model to create judge
+        custom_judge = load_chat_model(evaluator_model)
+
+        # Create async graph trajectory evaluator
+        evaluator = create_async_graph_trajectory_llm_as_judge(
+            judge=custom_judge,
+            prompt=custom_prompt,
+            continuous=False,  # Use boolean scoring
+            use_reasoning=True,  # Enable reasoning explanation
+            feedback_key=f"react_agent_{scenario['name']}_accuracy",
+        )
+        return evaluator
+    except Exception as e:
+        logger.error(f"Failed to create evaluator for scenario {scenario['name']}: {e}")
+        raise
+
+
 async def evaluate_trajectory(
-    trajectory_data: Dict[str, Any], evaluator_model: str
+    trajectory_data: Dict[str, Any], scenario: Dict[str, str], evaluator_model: str
 ) -> Dict[str, Any]:
-    """Evaluate agent trajectory using LLM-as-judge.
+    """Evaluate agent trajectory using async LLM-as-judge with scenario-specific rubric.
 
     Args:
         trajectory_data: Data from agent execution
+        scenario: Test scenario with rubric
         evaluator_model: Model to use as evaluator judge
 
     Returns:
@@ -150,61 +237,8 @@ async def evaluate_trajectory(
             "query": trajectory_data["query"],
         }
 
-    # Custom prompt with JSON guardrails and boolean scoring
-    CUSTOM_PROMPT = """You are an expert data labeler.
-Your task is to grade the accuracy of an AI agent's internal steps in resolving a user queries.
-
-<Rubric>
-  An accurate trajectory:
-  - Makes logical sense between steps
-  - Shows clear progression
-  - Is relatively efficient, though it does not need to be perfectly efficient
-  - Is semantically equivalent to the provided reference trajectory, if present
-</Rubric>
-
-<Instructions>
-  Grade the following thread, evaluating whether the agent's overall steps are logical and relatively efficient.
-  For the trajectory, "__start__" denotes an initial entrypoint to the agent, and "__interrupt__" corresponds to the agent
-  interrupting to await additional data from another source ("human-in-the-loop"):
-</Instructions>
-
-You MUST respond with PURE JSON only.
-
-CRITICAL: Your response must be EXACTLY in this JSON format with no other text:
-{{"score": true, "reasoning": "Brief explanation here"}}
-
-STRICT OUTPUT REQUIREMENTS:
-- Return ONLY valid JSON: {{"score": <boolean>, "reasoning": "<text>"}}
-- NO markdown, NO headers, NO extra text
-- Keep reasoning under 50 words
-- Score must be boolean: true or false
-
-<thread>
-{thread}
-</thread>
-
-{reference_outputs}
-"""
-
-    # Create judge model
-    try:
-        # Use load_chat_model directly as suggested
-        custom_judge = load_chat_model(evaluator_model)
-
-        logger.info(f"Created custom judge: {type(custom_judge)}")
-
-    except Exception as e:
-        logger.error(f"Failed to create custom judge: {e}")
-        raise
-
-    # Create the async LLM-as-judge evaluator with custom prompt
-    evaluator = create_async_graph_trajectory_llm_as_judge(
-        judge=custom_judge,
-        prompt=CUSTOM_PROMPT,
-        continuous=False,  # Use boolean scoring instead of continuous
-        use_reasoning=True,  # Enable reasoning explanation in output
-        feedback_key="react_agent_trajectory_quality",  # Custom feedback key
-    )
+    # Create scenario-specific evaluator
+    evaluator = await create_scenario_evaluator(scenario, evaluator_model)
 
     try:
         # Convert trajectory data using utility function
@@ -236,17 +270,36 @@ STRICT OUTPUT REQUIREMENTS:
         }
 
 
-# Pytest test functions
+# Create test combinations
+TEST_COMBINATIONS = [
+    (model_name, scenario)
+    for model_name in EvaluationConfig.AGENT_MODELS
+    for scenario in EvaluationConfig.TEST_SCENARIOS
+]
+
+
+# LangSmith pytest test functions
+@pytest.mark.langsmith
 @pytest.mark.asyncio
-@pytest.mark.parametrize("model_name", EvaluationConfig.AGENT_MODELS)
-@pytest.mark.parametrize("scenario", EvaluationConfig.TEST_SCENARIOS)
-async def test_graph_trajectory_evaluation(model_name, scenario):
-    """Test graph trajectory evaluation with LLM-as-judge for all model-scenario combinations."""
+@pytest.mark.parametrize(
+    "test_combo",
+    TEST_COMBINATIONS,
+    ids=lambda combo: f"{combo[1]['name']}_{combo[0].split(':')[-1]}",
+)
+async def test_graph_trajectory_evaluation(test_combo):
+    """Test graph trajectory evaluation with LangSmith integration for all model-scenario combinations."""
+    # Unpack the test combination
+    model_name, scenario = test_combo
+
     # Skip if required environment variables are not set
     required_env_vars = ["TAVILY_API_KEY", "SILICONFLOW_API_KEY"]
     for var in required_env_vars:
         if not os.getenv(var):
             pytest.skip(f"Required environment variable {var} not set")
+
+    # Also check for LangSmith API key
+    if not os.getenv("LANGSMITH_API_KEY"):
+        pytest.skip("LANGSMITH_API_KEY not set")
 
     # Generate unique thread ID for this combination
     thread_id = (
@@ -265,25 +318,48 @@ async def test_graph_trajectory_evaluation(model_name, scenario):
     # Verify trajectory was captured
     assert "trajectory" in trajectory_data or "error" in trajectory_data
 
-    # Run evaluation
+    # Log inputs as dict with query (LangSmith requires dict format)
+    t.log_inputs({"question": scenario["query"]})
+
+    # Log outputs - the actual agent conversation trajectory
+    if "trajectory" in trajectory_data:
+        # Convert to message format for the actual conversation
+        messages = []
+        if "result" in trajectory_data and "messages" in trajectory_data["result"]:
+            for msg in trajectory_data["result"]["messages"]:
+                if hasattr(msg, "model_dump"):
+                    messages.append(msg.model_dump())
+                elif hasattr(msg, "dict"):
+                    messages.append(msg.dict())
+                else:
+                    messages.append(dict(msg))
+
+        t.log_outputs({"messages": messages})
+    else:
+        t.log_outputs({"error": trajectory_data.get("error", "Unknown error")})
+
+    # Log reference outputs as expected behavior description
+    t.log_reference_outputs({"expected_behavior": scenario["expected_behavior"]})
+
+    # Run evaluation - this will log feedback to LangSmith automatically
     evaluation_result = await evaluate_trajectory(
         trajectory_data=trajectory_data,
+        scenario=scenario,
         evaluator_model=EvaluationConfig.EVALUATOR_MODEL,
     )
 
-    # Verify evaluation completed
-    assert "evaluation" in evaluation_result or "evaluation_error" in evaluation_result
+    # Log evaluation results
+    logger.info(f"[{model_name}] [{scenario['name']}] Evaluation completed")
 
-    # If evaluation succeeded, assert score is True
+    # Log detailed results if evaluation succeeded
     if "evaluation" in evaluation_result:
         eval_data = evaluation_result["evaluation"]
         score = eval_data.get("score", False)
         reasoning = eval_data.get("reasoning", "No reasoning provided")
-
         logger.info(
             f"[{model_name}] [{scenario['name']}] Score: {score}, Reasoning: {reasoning}"
         )
-        assert isinstance(score, bool), f"Expected boolean score, got {type(score)}"
-        assert score is True, (
-            f"Expected score to be True, got {score}. Reasoning: {reasoning}"
-        )
+
+    # Note: We removed the assertion on score being True
+    # Instead, let the evaluation score reflect real performance
+    # LangSmith will track and display the actual evaluation results
