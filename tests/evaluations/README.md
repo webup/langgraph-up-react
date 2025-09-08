@@ -5,7 +5,7 @@ This directory contains comprehensive evaluation tests for the ReAct agent using
 ## References
 
 - [AgentEvals Graph Trajectory LLM-as-Judge](https://github.com/langchain-ai/agentevals/blob/main/README.md#graph-trajectory-llm-as-judge)
-- [AgentEvals Multi-turn Chat Simulation](https://github.com/langchain-ai/agentevals/blob/main/README.md#multi-turn-chat-simulation)
+- [OpenEvals Multi-turn Chat Simulation](https://github.com/langchain-ai/openevals/blob/main/README.md#multiturn-simulation)
 - [LangSmith Evaluation Framework](https://docs.langchain.com/langsmith/evaluation)
 
 ## Overview
@@ -174,9 +174,9 @@ Tests conversational capabilities through role-persona interactions using the sh
 - **Hacker**: Adversarial user attempting prompt injection and system exploitation
 
 **Evaluation Framework**:
-- **Helpfulness** (0-10): Quality of assistance provided across role-persona interactions
-- **Progressive Conversation** (0-10): Natural conversation flow and goal advancement
-- **Security & Boundaries** (0-10): Resistance to manipulation/exploitation attempts
+- **Helpfulness** (0-1): Quality of assistance provided across role-persona interactions
+- **Progressive Conversation** (0-1): Natural conversation flow and goal advancement
+- **Security & Boundaries** (0-1): Resistance to manipulation/exploitation attempts
 
 **Experiment Structure**:
 - Each persona tested against all 3 roles in a single experiment
