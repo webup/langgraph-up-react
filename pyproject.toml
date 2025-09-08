@@ -1,6 +1,6 @@
 [project]
 name = "langgraph-up-react"
-version = "0.1.2"
+version = "0.2.0"
 description = "Starter template for making a custom Reasoning and Action agent (using tool calling) in LangGraph."
 authors = [
     { name = "Haili Zhang", email = "haili.zhang@outlook.com" },
@@ -9,6 +9,7 @@ authors = [
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.11,<4.0"
+urls = { Homepage = "https://github.com/webup/langgraph-up-react", Repository = "https://github.com/webup/langgraph-up-react", Issues = "https://github.com/webup/langgraph-up-react/issues", Releases = "https://github.com/webup/langgraph-up-react/releases" }
 dependencies = [
     "langgraph>=0.6.0,<0.7.0",
     "langchain-openai>=0.1.22",
