@@ -1,6 +1,6 @@
 # LangGraph ReAct Agent Template
 
-[![Version](https://img.shields.io/badge/version-v0.1.0-blue.svg)](https://github.com/webup/langgraph-up-react)
+[![Version](https://img.shields.io/badge/version-v0.2.0-blue.svg)](https://github.com/webup/langgraph-up-react)
 [![LangGraph](https://img.shields.io/badge/LangGraph-v0.6.6-blue.svg)](https://github.com/langchain-ai/langgraph)
 [![Build](https://github.com/webup/langgraph-up-react/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/webup/langgraph-up-react/actions/workflows/unit-tests.yml)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
@@ -9,6 +9,8 @@
 [![Twitter](https://img.shields.io/twitter/follow/zhanghaili0610?style=social)](https://twitter.com/zhanghaili0610)
 
 This template showcases a [ReAct agent](https://arxiv.org/abs/2210.03629) implemented using [LangGraph](https://github.com/langchain-ai/langgraph), works seamlessly with [LangGraph Studio](https://docs.langchain.com/langgraph-platform/quick-start-studio#use-langgraph-studio). ReAct agents are uncomplicated, prototypical agents that can be flexibly extended to many tools.
+
+**🎉 Latest v0.2.0 Release**: Complete evaluation system and multi-model support! Check the [release notes](https://github.com/webup/langgraph-up-react/releases) for all new features.
 
 ![Graph view in LangGraph studio UI](./static/studio_ui.png)
 
@@ -19,10 +21,17 @@ The core logic, defined in `src/react_agent/graph.py`, demonstrates a flexible R
 ## Features
 
 ### Multi-Provider Model Support
+- **SiliconFlow Integration**: Complete support for Chinese MaaS platform with open-source models (Qwen, GLM, DeepSeek, etc.)
 - **Qwen Models**: Complete Qwen series support via `langchain-qwq` package, including Qwen-Plus, Qwen-Turbo, QwQ-32B, QvQ-72B
 - **OpenAI**: GPT-4o, GPT-4o-mini, etc.
   - **OpenAI-Compatible**: Any provider supporting OpenAI API format via custom API key and base URL
 - **Anthropic**: Claude 4 Sonnet, Claude 3.5 Haiku, etc.
+
+### Production-Grade Agent Evaluation System
+- **Dual Evaluation Framework**: Graph trajectory evaluation + Multi-turn chat simulation for comprehensive agent testing
+- **LLM-as-Judge Methodology**: Scenario-specific evaluation criteria with professional assessment systems
+- **Multi-Model Benchmarking**: Compare performance across different model providers and configurations
+- **LangSmith Integration**: Complete evaluation tracking with historical analysis and collaboration features
 
 ### Agent Tool Integration Ecosystem
 - **Model Context Protocol (MCP)**: Dynamic external tool loading at runtime
@@ -100,6 +109,9 @@ TAVILY_API_KEY=your-tavily-api-key
 # Required: If using Qwen models (default)
 DASHSCOPE_API_KEY=your-dashscope-api-key
 
+# Recommended: SiliconFlow platform for multi-model support and evaluation
+SILICONFLOW_API_KEY=your-siliconflow-api-key
+
 # Optional: OpenAI model service platform keys
 OPENAI_API_KEY=your-openai-api-key
 # Optional: If using OpenAI-compatible service platforms
@@ -109,7 +121,7 @@ OPENAI_API_BASE=your-openai-base-url
 ANTHROPIC_API_KEY=your-anthropic-api-key
 
 # Optional: Regional API support for Qwen models  
-REGION=international  # or 'prc' for China mainland (default)
+REGION=international  # or 'cn' for China mainland (default)
 
 # Optional: Always enable DeepWiki documentation tools
 ENABLE_DEEPWIKI=true
@@ -127,6 +139,12 @@ The template uses `qwen:qwen-flash` as the default model, defined in [`src/commo
 
 ### API Key Setup by Provider
 
+#### SiliconFlow (Recommended for Evaluation)
+```bash
+SILICONFLOW_API_KEY=your-siliconflow-api-key
+```
+Get your API key: [SiliconFlow Console](https://siliconflow.com) - Supports Qwen, GLM, DeepSeek and other open-source models
+
 #### OpenAI
 ```bash
 OPENAI_API_KEY=your-openai-api-key
@@ -142,7 +160,7 @@ Get your API key: [Anthropic Console](https://console.anthropic.com/)
 #### Qwen Models (Default)
 ```bash
 DASHSCOPE_API_KEY=your-dashscope-api-key
-REGION=international  # or 'prc' for China mainland
+REGION=international  # or 'cn' for China mainland
 ```
 Get your API key: [DashScope Console](https://dashscope.console.aliyun.com/)
 
@@ -239,6 +257,11 @@ In LangGraph Studio, configure models through [Assistant management](https://doc
 "openai:gpt-4o-mini"
 "openai:gpt-4o"
 
+# SiliconFlow models (Chinese MaaS platform)
+"siliconflow:Qwen/Qwen3-8B"           # Qwen series efficient model
+"siliconflow:THUDM/GLM-4-9B-0414"     # GLM series chat model
+"siliconflow:THUDM/GLM-Z1-9B-0414"    # GLM reasoning-enhanced model
+
 # Qwen models (with regional support)
 "qwen:qwen-flash"          # Default model
 "qwen:qwen-plus"           # Balanced performance
@@ -311,6 +334,102 @@ Key components:
 
 This structure supports multiple agents and easy component reuse across different implementations.
 
+## 🔬 Agent Evaluation System
+
+### Why Evaluation Matters
+
+Agent evaluation is crucial for production-grade AI applications because it:
+
+- **🎯 Validates Performance**: Ensures agents work correctly across different scenarios and use tools appropriately
+- **🛡️ Identifies Security Issues**: Discovers potential vulnerabilities through adversarial testing
+- **📊 Enables Benchmarking**: Provides objective metrics to compare different models and configurations
+- **🔄 Drives Improvement**: Offers concrete performance metrics to guide agent optimization
+
+### Dual Evaluation Framework
+
+The template provides a comprehensive evaluation system using a dual-methodology approach:
+
+#### 🎯 Graph Trajectory Evaluation
+Tests agent reasoning patterns and tool usage decisions:
+
+```bash
+# Run comprehensive graph trajectory evaluation
+make eval_graph
+
+# Test specific models
+make eval_graph_qwen    # Qwen/Qwen3-8B model
+make eval_graph_glm     # GLM-4-9B-0414 model
+```
+
+**Evaluation Scenarios**:
+- **Simple Question**: "What is the capital of France?" - Tests efficiency for basic facts
+- **Search Required**: "What's the latest news about artificial intelligence?" - Tests tool usage and information synthesis
+- **Multi-step Reasoning**: "What are the pros and cons of renewable energy, and what are the latest developments?" - Tests complex analytical tasks
+
+#### 🔄 Multi-turn Chat Simulation
+Tests conversational capabilities through role-persona interactions:
+
+```bash
+# Start development server (required for multi-turn evaluation)
+make dev
+
+# Run multi-turn evaluation in another terminal
+make eval_multiturn
+
+# Test specific user personas
+make eval_multiturn_polite   # Polite user persona
+make eval_multiturn_hacker   # Adversarial user persona
+```
+
+**Role Scenarios**:
+- **Writing Assistant** × User Personas: Professional email collaboration
+- **Customer Service** × User Personas: Account troubleshooting support
+- **Interviewer** × User Personas: Technical interview management
+
+### Multi-Provider Model Testing
+
+The evaluation system supports testing across different model providers:
+
+- **🌍 International Models**: OpenAI GPT-4o, Anthropic Claude, etc.
+- **🇨🇳 Chinese Models**: SiliconFlow platform (Qwen, GLM, DeepSeek models)
+- **🔄 Comparative Analysis**: Side-by-side performance comparison across providers
+- **💡 Cost Optimization**: Identify the most cost-effective models for your use cases
+
+### Evaluation System Details
+
+The evaluation system provides a comprehensive agent performance analysis framework with detailed test scenarios, evaluation methodology, and results analysis.
+
+For specific evaluation results, test scenarios, and usage instructions, please refer to the detailed evaluation system documentation.
+
+### Quick Start with Evaluation
+
+```bash
+# Set up required environment variables
+export SILICONFLOW_API_KEY="your_siliconflow_api_key"     # For model testing
+export TAVILY_API_KEY="your_tavily_api_key"               # For search functionality
+export LANGSMITH_API_KEY="your_langsmith_api_key"         # For evaluation tracking
+
+# Run comprehensive evaluation suite
+make evals
+
+# Or run evaluations separately
+make eval_graph       # Graph trajectory evaluation (runs independently)
+make eval_multiturn   # Multi-turn chat evaluation (requires server)
+
+# View release notes and version information
+# Visit GitHub Releases page for all version release notes: https://github.com/webup/langgraph-up-react/releases
+```
+
+### Evaluation System Features
+
+- **🎯 LLM-as-Judge Methodology**: Scenario-specific custom evaluation criteria
+- **📊 Professional Reporting**: Detailed score extraction and ranking systems
+- **🔍 Trajectory Normalization**: JSON serialization-compatible trajectory processing
+- **📈 LangSmith Integration**: Complete tracking and historical analysis
+- **⚙️ Centralized Configuration**: Unified evaluation settings in `config.py`
+
+For detailed evaluation documentation, see: [`tests/evaluations/README.md`](./tests/evaluations/README.md)
+
 ## Development & Community
 
 ### Roadmap & Contributing
@@ -333,3 +452,26 @@ Check out our roadmap to see what we're working on next and how you can contribu
 - [LangSmith](https://smith.langchain.com/) - Tracing and collaboration platform  
 - [ReAct Paper](https://arxiv.org/abs/2210.03629) - Original research on reasoning and acting
 - [Claude Code](https://claude.ai/code) - AI-powered development environment
+
+## Acknowledgments
+
+This project is built on the shoulders of amazing open-source projects and service platforms:
+
+### LangChain Official Projects
+- **[LangGraph](https://github.com/langchain-ai/langgraph)** - Powerful agent graph construction framework
+- **[LangChain](https://github.com/langchain-ai/langchain)** - Core library for building LLM applications
+- **[AgentEvals](https://github.com/langchain-ai/agentevals)** - Agent evaluation framework providing LLM-as-Judge methodology
+- **[OpenEvals](https://github.com/langchain-ai/openevals)** - Open evaluation tools and methods
+- **[LangSmith](https://smith.langchain.com/)** - LLM application tracing and debugging platform
+
+### LangChain Community Integrations
+- **[langchain-siliconflow](https://pypi.org/project/langchain-siliconflow/)** - SiliconFlow model integration for open-source model support
+- **[langchain-qwq](https://pypi.org/project/langchain-qwq/)** - Alibaba Cloud Bailian platform model integration for Qwen series
+
+### MaaS Platform Services
+- **SiliconFlow** - Chinese MaaS platform providing open-source models
+- **Alibaba Cloud Bailian (DashScope)** - Qwen series model service platform
+
+View all version updates: [📋 GitHub Releases](https://github.com/webup/langgraph-up-react/releases)
+
+Thank you to all contributors and the open-source community! 🙏

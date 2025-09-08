@@ -1,6 +1,6 @@
 # LangGraph ReAct Agent 模板
 
-[![Version](https://img.shields.io/badge/version-v0.1.0-blue.svg)](https://github.com/webup/langgraph-up-react)
+[![Version](https://img.shields.io/badge/version-v0.2.0-blue.svg)](https://github.com/webup/langgraph-up-react)
 [![LangGraph](https://img.shields.io/badge/LangGraph-v0.6.6-blue.svg)](https://github.com/langchain-ai/langgraph)
 [![Build](https://github.com/webup/langgraph-up-react/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/webup/langgraph-up-react/actions/workflows/unit-tests.yml)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
@@ -9,6 +9,8 @@
 [![Twitter](https://img.shields.io/twitter/follow/zhanghaili0610?style=social)](https://twitter.com/zhanghaili0610)
 
 基于 [LangGraph](https://github.com/langchain-ai/langgraph) 构建的 [ReAct 智能体](https://arxiv.org/abs/2210.03629) 模板，专为本地开发者设计，与 [LangGraph Studio](https://docs.langchain.com/langgraph-platform/quick-start-studio#use-langgraph-studio) 无缝协作。ReAct 智能体是简洁的原型智能体，可以灵活扩展支持多种工具。
+
+**🎉 最新 v0.2.0 版本**：完整的评估系统和多模型支持！查看 [发布说明](https://github.com/webup/langgraph-up-react/releases) 了解所有新功能详情。
 
 ![LangGraph Studio 界面截图](./static/studio_ui.png)
 
@@ -28,11 +30,18 @@
 
 ![飞书群二维码](./static/feishu.jpg)
 
-## v0.1.0 核心特性
+## v0.2.0 核心特性
 
 ### 🚀 专为国内开发者准备的模型平台
+- **硅基流动 SiliconFlow**: 完整的中国大模型云平台集成，支持 Qwen、GLM、DeepSeek 等国产开源模型
 - **通义千问系列模型**: 通过 `langchain-qwq` 包提供 Qwen 系列模型支持，包括 Qwen-Plus、Qwen-Turbo、QwQ-32B、QvQ-72B
 - **OpenAI 兼容**: 支持 GPT-4o、GPT-4o-mini 等模型，以及任何 OpenAI API 格式的提供商
+
+### 🔬 生产级智能体评估系统
+- **双重评估框架**: 图轨迹评估 + 多轮对话仿真，全方位测试智能体性能
+- **LLM-as-Judge 方法论**: 基于场景特定评判标准的专业评估系统
+- **硅基流动模型评估**: 使用国产开源模型进行智能体性能基准测试，提供多种 10B 以下模型便于测试评估
+- **LangSmith 集成**: 完整的评估跟踪和历史分析系统
 
 ### 🛠 Agent 工具集成生态系统
 - **模型上下文协议（MCP，Model Context Protocol）**: 运行时动态外部工具加载
@@ -108,13 +117,16 @@ cp .env.example .env
 
 ```bash
 # 必需：阿里云百炼平台模型
-REGION=prc  # 或 'international' 使用国内端点（默认）
+REGION=cn  # 或 'international' 使用国内端点（默认）
 
 # 必需：搜索功能所需
 TAVILY_API_KEY=your_tavily_api_key
 
 # 必需：如使用通义千问模型（默认）
 DASHSCOPE_API_KEY=your_dashscope_api_key
+
+# 推荐：硅基流动大模型云平台（用于评估和多模型支持）
+SILICONFLOW_API_KEY=your_siliconflow_api_key
 
 # 可选：OpenAI 模型服务平台密钥
 OPENAI_API_KEY=your_openai_key
@@ -174,6 +186,11 @@ MODEL=anthropic:claude-3.5-haiku
 "openai:gpt-4o-mini"
 "openai:gpt-4o"
 
+# 硅基流动模型（国产开源模型云平台）
+"siliconflow:Qwen/Qwen3-8B"           # Qwen 系列高效模型
+"siliconflow:THUDM/GLM-4-9B-0414"     # GLM 系列对话模型
+"siliconflow:THUDM/GLM-Z1-9B-0414"    # GLM 推理增强模型
+
 # 通义千问模型（支持区域配置）
 "qwen:qwen-flash"          # 默认模型
 "qwen:qwen-plus"           # 平衡性能
@@ -187,10 +204,16 @@ MODEL=anthropic:claude-3.5-haiku
 
 ### 各提供商 API 密钥设置
 
+#### 硅基流动（推荐用于评估）
+```bash
+SILICONFLOW_API_KEY=your-siliconflow-api-key
+```
+获取 API 密钥：[硅基流动控制台](https://cloud.siliconflow.cn/me/account/ak) - 支持 Qwen、GLM、DeepSeek 等国产开源模型
+
 #### 通义千问（默认）
 ```bash
 DASHSCOPE_API_KEY=your-dashscope-api-key
-REGION=prc  # 或 'international' 使用国际端点
+REGION=cn  # 或 'international' 使用国际端点
 ```
 获取 API 密钥：[DashScope 控制台](https://dashscope.console.aliyun.com/)
 
@@ -307,6 +330,103 @@ make format     # 使用 ruff 自动格式化代码
 
 此架构支持多智能体和不同实现间的轻松组件重用。
 
+## 🔬 智能体评估系统
+
+### 为什么需要评估？
+
+智能体评估是生产级 AI 应用的关键环节，它能够：
+
+- **🎯 验证性能**: 确保智能体在不同场景下的推理和工具使用能力
+- **🛡️ 安全检测**: 通过对抗性测试发现潜在的安全边界问题
+- **📊 基准对比**: 量化不同模型和配置的性能差异
+- **🔄 持续改进**: 为智能体优化提供客观的性能指标
+
+### 双重评估框架
+
+本模板提供业界领先的综合评估系统，采用双重评估方法论：
+
+#### 🎯 图轨迹评估（Graph Trajectory Evaluation）
+测试智能体的推理模式和工具使用决策：
+
+```bash
+# 运行所有模型和场景的图轨迹评估
+make eval_graph
+
+# 测试特定硅基流动模型
+make eval_graph_qwen    # Qwen/Qwen3-8B 模型
+make eval_graph_glm     # GLM-4-9B-0414 模型
+```
+
+**评估场景**：
+- **简单问题**: "法国的首都是什么？" - 测试基础事实的效率回答
+- **搜索必需**: "人工智能的最新新闻是什么？" - 测试工具使用和信息综合
+- **多步推理**: "可再生能源的优缺点和最新发展是什么？" - 测试复杂分析任务
+
+#### 🔄 多轮对话仿真（Multi-turn Chat Simulation）
+测试对话能力和角色适应性：
+
+```bash
+# 启动开发服务器（多轮评估需要）
+make dev
+
+# 在另一个终端运行多轮评估
+make eval_multiturn
+
+# 测试特定用户角色
+make eval_multiturn_polite   # 礼貌用户角色
+make eval_multiturn_hacker   # 对抗性用户角色
+```
+
+**角色场景**：
+- **写作助手** × 用户角色：专业邮件撰写协作
+- **客服代表** × 用户角色：账户问题解决支持
+- **面试官** × 用户角色：技术面试流程管理
+
+### 硅基流动模型评估优势
+
+使用中国领先的大模型云平台进行评估：
+
+- **🇨🇳 国产模型**: 使用 Qwen/Qwen3-8B、GLM-4-9B-0414 等国产开源模型
+- **🏅 先进评估器**: GLM-Z1-9B-0414 推理模型作为 LLM 评判器
+- **🧪 丰富选择**: 提供多种 10B 以下开源模型，便于开展评估测试实验
+
+### 评估系统详情
+
+评估系统提供了完整的智能体性能分析框架，包含详细的测试场景、评估方法论和结果分析。
+
+要了解具体的评估结果、测试场景和使用方法，请参阅详细的评估系统文档。
+
+### 快速开始评估
+
+```bash
+# 设置必需的环境变量
+export SILICONFLOW_API_KEY="your_siliconflow_api_key"
+export TAVILY_API_KEY="your_tavily_api_key"
+export LANGSMITH_API_KEY="your_langsmith_api_key"
+
+# 运行综合评估套件
+make evals
+
+# 或分别运行各类评估
+make eval_graph       # 图轨迹评估（独立运行）
+make eval_multiturn   # 多轮对话评估（需要服务器）
+```
+
+# 查看更多版本信息
+# 访问 GitHub Releases 页面查看所有版本发布说明：https://github.com/webup/langgraph-up-react/releases
+
+> [!TIP]
+> **硅基流动 API 密钥**: 在 [硅基流动控制台](https://cloud.siliconflow.cn/me/account/ak) 获取 API 密钥，支持 Qwen、GLM、DeepSeek 等多种国产开源模型。
+
+### 评估系统特性
+
+- **🎯 LLM-as-Judge 方法论**: 场景特定的自定义评判标准
+- **📊 专业报告系统**: 详细的评分提取和排名系统  
+- **🔍 轨迹标准化**: 兼容 JSON 序列化的轨迹处理
+- **📈 LangSmith 集成**: 全面的跟踪和历史分析
+- **⚙️ 集中化配置**: `config.py` 中的统一评估设置
+
+详细评估文档请参见：[`tests/evaluations/README.md`](./tests/evaluations/README.md)
 
 ## 开发与社区
 
@@ -337,3 +457,26 @@ make format     # 使用 ruff 自动格式化代码
 ![《LangGraph实战》《LangChain实战》照片](./static/book-photo.jpg)
 ![《LangGraph实战》购书海报](./static/langgraph-poster.jpg)
 ![《LangChain实战》购书海报](./static/langchain-poster.jpg)
+
+## 致谢
+
+本项目的构建离不开以下优秀的开源项目和服务平台：
+
+### LangChain 官方项目
+- **[LangGraph](https://github.com/langchain-ai/langgraph)** - 强大的智能体图构建框架
+- **[LangChain](https://github.com/langchain-ai/langchain)** - 构建 LLM 应用的核心库
+- **[AgentEvals](https://github.com/langchain-ai/agentevals)** - 智能体评估框架，提供 LLM-as-Judge 方法论
+- **[OpenEvals](https://github.com/langchain-ai/openevals)** - 开放评估工具和方法
+- **[LangSmith](https://smith.langchain.com/)** - LLM 应用跟踪和调试平台
+
+### LangChain 社区集成
+- **[langchain-siliconflow](https://pypi.org/project/langchain-siliconflow/)** - 硅基流动模型集成，提供国产开源模型支持
+- **[langchain-qwq](https://pypi.org/project/langchain-qwq/)** - 阿里云百炼平台模型集成，支持通义千问系列
+
+### MaaS 平台服务
+- **硅基流动 (SiliconFlow)** - 提供国产开源模型的 MaaS 平台（中国用户 10B 以下模型永久免费）
+- **阿里云百炼 (DashScope)** - 通义千问系列模型服务平台
+
+查看所有版本更新详情：[📋 GitHub Releases](https://github.com/webup/langgraph-up-react/releases)
+
+感谢所有贡献者和开源社区的支持！🙏

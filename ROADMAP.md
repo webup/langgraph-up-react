@@ -16,17 +16,20 @@ This document outlines the planned upgrades and enhancements for the LangGraph R
 - **Kubernetes Manifests**: K8s deployment configurations with ConfigMaps, Secrets, and service definitions for prototype environments
 - **Development Workflow**: Seamless transition from local development (`make dev`) to containerized prototyping
 
-## v0.2.0 - Multi-Provider Evaluation Framework (Planning)
+## v0.2.0 - Multi-Provider Evaluation Framework (Completed)
 
-### SiliconFlow Integration
-- **Provider Support**: Add standalone SiliconFlow provider prefix in `load_chat_model`
-- **Regional Coverage**: Support both PRC and international API bases for SiliconFlow
-- **SOTA OSS Models**: Leverage state-of-the-art open-source models for comprehensive evaluation
+### SiliconFlow Integration ✅
+- **Provider Support**: Added standalone SiliconFlow provider with `ChatSiliconFlow` integration in `load_chat_model`
+- **Regional Coverage**: Full support for both PRC and international API endpoints via `REGION` environment variable
+- **SOTA OSS Models**: Integrated Qwen/Qwen3-8B, GLM-4-9B, and GLM-Z1-9B models for comprehensive evaluation
 
-### Agent Evaluation
-- **OpenEvals Integration**: Implement basic evaluation framework using OpenEvals
-- **AgentEvals Setup**: Add AgentEvals for comprehensive agent performance testing
-- **Evaluation Tests**: Create structured evaluation test suites to measure agent effectiveness across multiple model providers
+### Comprehensive Agent Evaluation System ✅
+- **AgentEvals Framework**: Complete implementation using AgentEvals with LLM-as-judge methodology
+- **Dual Evaluation Approach**: 
+  - **Graph Trajectory Evaluation**: Scenario-specific LLM-as-judge with custom rubrics for reasoning pattern analysis
+  - **Multi-turn Chat Simulation**: Role-persona interactions with adversarial testing capabilities
+- **LangSmith Integration**: Full evaluation tracking with OpenEvals `aevaluate` integration
+- **Production-Ready Suite**: Comprehensive evaluation commands via Makefile with detailed reporting and scoring systems
 
 ## v0.1.0 - Core Infrastructure Enhancements (Completed)
 
