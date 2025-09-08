@@ -1,39 +1,72 @@
 """Graph trajectory evaluation using AgentEvals framework with LangSmith integration.
 
 This module implements comprehensive evaluation of the ReAct agent using graph trajectory
-LLM-as-judge methodology with async execution and LangSmith pytest integration.
+LLM-as-judge methodology with async execution and OpenEvals aevaluate integration.
+
+Usage:
+    python graph.py                           # Run all models on all scenarios
+    python graph.py --model siliconflow:Qwen/Qwen3-8B   # Test specific model on all scenarios
+    python graph.py --verbose                           # Enable debug output
 """
 
+import argparse
+import asyncio
 import logging
 import os
+
+# Import load_chat_model from common utils
+import sys
+import traceback
 from typing import Any, Dict
 
-import pytest
 from agentevals.graph_trajectory.llm import create_async_graph_trajectory_llm_as_judge
 from agentevals.graph_trajectory.utils import aextract_langgraph_trajectory_from_thread
+from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage
 from langgraph.checkpoint.memory import MemorySaver
-from langsmith import testing as t
+from langsmith import Client
+from langsmith.evaluation import aevaluate
 
-from common.context import Context
-from common.utils import load_chat_model
-from tests.evaluations.utils import normalize_trajectory_data
+sys.path.append(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
+
+from config import EVALUATION_CONFIG
+from utils import (
+    GRAPH_TRAJECTORY_SCORE_NAMES,
+    extract_scores_from_results,
+    normalize_trajectory_data,
+    print_evaluation_summary,
+    print_scores_summary,
+)
+
+from src.common.context import Context
+from src.common.utils import load_chat_model
+
+# Load environment variables
+load_dotenv()
 
 # Configure logging for evaluation
 logger = logging.getLogger(__name__)
+
+# Initialize LangSmith client
+langsmith_client = Client()
+
+# Dataset configuration
+DATASET_NAME = f"{EVALUATION_CONFIG['DATASET_PREFIX']}-graph-trajectory"
 
 
 class EvaluationConfig:
     """Configuration for graph trajectory evaluation."""
 
-    # Agent models to test - using exact model names as specified
+    # Agent models to test - using shared configuration
     AGENT_MODELS = [
-        "siliconflow:Qwen/Qwen3-8B",  # Qwen/Qwen3-8B
-        "siliconflow:THUDM/GLM-4-9B-0414",  # THUDM/GLM-4-9B-0414
+        EVALUATION_CONFIG["MODEL_AI"],  # Primary AI agent model
+        EVALUATION_CONFIG["MODEL_PERSONA"],  # Alternative model for testing
     ]
 
-    # Evaluator model - using GLM-Z1 for better reasoning and tool support
-    EVALUATOR_MODEL = "siliconflow:THUDM/GLM-Z1-9B-0414"
+    # Evaluator model - using shared configuration
+    EVALUATOR_MODEL = EVALUATION_CONFIG["MODEL_EVALUATOR"]
 
     # Test scenarios with different evaluation rubrics
     TEST_SCENARIOS = [
@@ -167,18 +200,179 @@ async def run_agent_scenario(
         }
 
 
-async def create_scenario_evaluator(scenario: Dict[str, str], evaluator_model: str):
-    """Create an async graph trajectory evaluator with scenario-specific rubric.
+async def ensure_dataset():
+    """Ensure dataset exists, create only if it doesn't exist."""
+    try:
+        existing_datasets = langsmith_client.list_datasets()
+        for dataset in existing_datasets:
+            if dataset.name == DATASET_NAME:
+                print(f"📋 Using existing dataset: {DATASET_NAME}")
+                return DATASET_NAME
+    except Exception:
+        pass
 
-    Args:
-        scenario: Test scenario with name, query, and rubric
-        evaluator_model: Model to use as evaluator judge
+    # Create dataset if it doesn't exist
+    print(f"📋 Creating new dataset: {DATASET_NAME}")
+    dataset = langsmith_client.create_dataset(
+        dataset_name=DATASET_NAME,
+        description="Graph trajectory evaluation scenarios for ReAct agent testing with custom evaluator",
+    )
 
-    Returns:
-        Configured async graph trajectory evaluator
-    """
-    # Create custom prompt with scenario-specific rubric
-    custom_prompt = f"""You are an expert data labeler.
+    # Add examples for each scenario following the sample data format
+    for scenario in EvaluationConfig.TEST_SCENARIOS:
+        langsmith_client.create_example(
+            inputs={
+                "question": scenario["query"],
+                "scenario": scenario[
+                    "name"
+                ],  # Use "scenario" instead of "scene" to match sample
+            },
+            outputs={"expected_behavior": scenario["expected_behavior"]},
+            dataset_id=dataset.id,
+            metadata={
+                "scenario": scenario["name"],
+                "query_type": scenario["name"],
+                "dataset_split": ["base"],  # Add dataset_split to match sample format
+            },
+        )
+
+    print(
+        f"✨ Created dataset '{DATASET_NAME}' with {len(EvaluationConfig.TEST_SCENARIOS)} scenarios"
+    )
+    return DATASET_NAME
+
+
+async def create_trajectory_app(model_name: str, verbose: bool = False):
+    """Create trajectory evaluation app for a specific model."""
+
+    async def app(inputs: Dict[str, Any]) -> Dict[str, Any]:
+        """Run trajectory evaluation for model-scenario combination."""
+        # Extract from dict structure with question and scenario (updated from scene)
+        question = inputs.get("question", "")
+        scenario_name = inputs.get(
+            "scenario", inputs.get("scene", "unknown")
+        )  # Support both keys for compatibility
+
+        if verbose:
+            print(f"🔧 Running trajectory evaluation: {model_name} on {scenario_name}")
+            print(f"📋 Query: {question[:100]}...")
+
+        # Generate unique thread ID for this evaluation
+        thread_id = (
+            f"eval_{model_name.replace(':', '_').replace('/', '_')}_{scenario_name}"
+        )
+
+        # Run agent scenario
+        trajectory_data = await run_agent_scenario(
+            model_name=model_name, query=question, thread_id=thread_id
+        )
+
+        if verbose and "error" in trajectory_data:
+            print(f"❌ Error: {trajectory_data['error']}")
+        elif verbose:
+            traj = trajectory_data.get("trajectory", {})
+            steps_count = 0
+            if "steps" in traj:
+                steps_count = (
+                    len(traj["steps"]) if isinstance(traj["steps"], list) else 0
+                )
+            print(f"✅ Trajectory captured: {steps_count} steps")
+            print(
+                f"🔍 Trajectory structure: {list(traj.keys()) if isinstance(traj, dict) else 'Not a dict'}"
+            )
+            if verbose and traj:
+                print(f"🔍 Full trajectory keys: {list(traj.keys())}")
+                if "outputs" in traj and "steps" in traj["outputs"]:
+                    print(f"🔍 Steps in outputs: {traj['outputs']['steps']}")
+
+        # Return trajectory outputs directly
+        if "error" in trajectory_data:
+            return {
+                "error": trajectory_data["error"],
+                "model": model_name,
+                "scenario": scenario_name,
+                "query": question,
+            }
+
+        # Extract result from trajectory data - maintaining sample format
+        result = trajectory_data.get("result", {})
+
+        # Return in format similar to sample data
+        return {
+            "trajectory_data": trajectory_data,
+            "messages": result.get("messages", []),
+            "model": model_name,
+            "scenario": scenario_name,
+            "query": question,
+            "thread_id": thread_id,
+        }
+
+    return app
+
+
+async def create_trajectory_evaluators():
+    """Create custom evaluators for trajectory assessment with scenario-specific rubrics."""
+
+    # Create scenario mapping for easy lookup
+    scenarios = {
+        scenario["name"]: scenario for scenario in EvaluationConfig.TEST_SCENARIOS
+    }
+
+    async def graph_trajectory_scenario_judge(run, example=None):
+        """Graph trajectory evaluator with scenario-specific rubrics using direct judge approach."""
+        try:
+            # Extract scenario information from example
+            scenario_name = None
+            if example and hasattr(example, "inputs") and example.inputs:
+                scenario_name = example.inputs.get(
+                    "scenario", example.inputs.get("scene")
+                )
+
+            if not scenario_name or scenario_name not in scenarios:
+                return {
+                    "key": "graph_trajectory_accuracy",
+                    "score": 0,
+                    "comment": f"Unknown scenario: {scenario_name}",
+                }
+
+            # Get scenario configuration
+            scenario = scenarios[scenario_name]
+
+            # Quick check for obvious failures only
+            if not run or not run.outputs:
+                return {
+                    "key": "graph_trajectory_accuracy",
+                    "score": 0,
+                    "comment": "No run outputs available - obvious failure",
+                }
+
+            # Get trajectory data directly from run outputs (already extracted by app)
+            trajectory_data = run.outputs.get("trajectory_data", {})
+
+            # Quick check for obvious execution failures
+            if not trajectory_data or "error" in trajectory_data:
+                return {
+                    "key": "graph_trajectory_accuracy",
+                    "score": 0,
+                    "comment": f"Trajectory execution error - obvious failure: {trajectory_data.get('error', 'Unknown error')}",
+                }
+
+            # Extract and normalize trajectory with inputs and outputs
+            extracted_trajectory = trajectory_data.get("trajectory", {})
+            if not extracted_trajectory:
+                return {
+                    "key": "graph_trajectory_accuracy",
+                    "score": 0,
+                    "comment": "No trajectory data found",
+                }
+
+            # Normalize trajectory data to make it JSON serializable
+            serializable_inputs, serializable_outputs = normalize_trajectory_data(
+                extracted_trajectory
+            )
+
+            # Create custom prompt with scenario-specific rubric
+            custom_prompt = f"""You are an expert data labeler.
 Your task is to grade the accuracy of an AI agent's internal steps in resolving user queries.
 
 <Scenario-Specific Rubric>
@@ -198,168 +392,200 @@ interrupting to await additional data from another source ("human-in-the-loop"):
 {{reference_outputs}}
 """
 
-    try:
-        # Use load_chat_model to create judge
-        custom_judge = load_chat_model(evaluator_model)
+            # Create graph trajectory judge with custom prompt
+            evaluator = create_async_graph_trajectory_llm_as_judge(
+                prompt=custom_prompt,
+                judge=load_chat_model(EvaluationConfig.EVALUATOR_MODEL),
+                continuous=False,
+                use_reasoning=True,
+                feedback_key="graph_trajectory_accuracy",
+            )
 
-        # Create async graph trajectory evaluator
-        evaluator = create_async_graph_trajectory_llm_as_judge(
-            judge=custom_judge,
-            prompt=custom_prompt,
-            continuous=False,  # Use boolean scoring
-            use_reasoning=True,  # Enable reasoning explanation
-            feedback_key=f"react_agent_{scenario['name']}_accuracy",
-        )
-        return evaluator
-    except Exception as e:
-        logger.error(f"Failed to create evaluator for scenario {scenario['name']}: {e}")
-        raise
+            # Call judge directly with normalized inputs/outputs
+            result = await evaluator(
+                inputs=serializable_inputs,
+                outputs=serializable_outputs,
+            )
 
+            # Add scenario context to result
+            if isinstance(result, dict):
+                result["scenario"] = scenario_name
 
-async def evaluate_trajectory(
-    trajectory_data: Dict[str, Any], scenario: Dict[str, str], evaluator_model: str
-) -> Dict[str, Any]:
-    """Evaluate agent trajectory using async LLM-as-judge with scenario-specific rubric.
+            return result
 
-    Args:
-        trajectory_data: Data from agent execution
-        scenario: Test scenario with rubric
-        evaluator_model: Model to use as evaluator judge
+        except Exception as e:
+            return {
+                "key": "graph_trajectory_accuracy",
+                "score": 0,
+                "comment": f"Evaluation error: {str(e)}",
+            }
 
-    Returns:
-        Evaluation results
-    """
-    if "error" in trajectory_data:
-        return {
-            "evaluation_error": "Agent execution failed",
-            "agent_error": trajectory_data["error"],
-            "model": trajectory_data["model"],
-            "query": trajectory_data["query"],
-        }
-
-    # Create scenario-specific evaluator
-    evaluator = await create_scenario_evaluator(scenario, evaluator_model)
-
-    try:
-        # Convert trajectory data using utility function
-        trajectory = trajectory_data["trajectory"]
-        serializable_inputs, serializable_outputs = normalize_trajectory_data(
-            trajectory
-        )
-
-        # Run the evaluation with normalized data
-        evaluation_result = await evaluator(
-            inputs=serializable_inputs,
-            outputs=serializable_outputs,
-            query=trajectory_data["query"],
-        )
-
-        return {
-            "evaluation": evaluation_result,
-            "model": trajectory_data["model"],
-            "query": trajectory_data["query"],
-            "thread_id": trajectory_data["thread_id"],
-            "trajectory_steps": len(trajectory_data["trajectory"]["steps"]),
-        }
-
-    except Exception as e:
-        return {
-            "evaluation_error": str(e),
-            "model": trajectory_data["model"],
-            "query": trajectory_data["query"],
-        }
+    return [graph_trajectory_scenario_judge]
 
 
-# Create test combinations
-TEST_COMBINATIONS = [
-    (model_name, scenario)
-    for model_name in EvaluationConfig.AGENT_MODELS
-    for scenario in EvaluationConfig.TEST_SCENARIOS
-]
+async def run_model_experiment(
+    model_name: str,
+    dataset_name: str,
+    verbose: bool = False,
+):
+    """Run evaluation experiment for a specific model across all scenarios in dataset."""
+    # Use full model name as experiment name
+    experiment_name = model_name
+
+    print(f"🚀 Running experiment: {experiment_name}")
+    print(f"🤖 Testing model '{model_name}' on dataset with all scenarios")
+
+    # Create trajectory app for this model
+    app = await create_trajectory_app(model_name, verbose)
+
+    # Create evaluators for all scenarios
+    evaluators = await create_trajectory_evaluators()
+
+    # Run evaluation
+    async_results = await aevaluate(
+        app,
+        data=dataset_name,
+        evaluators=evaluators,
+        experiment_prefix=experiment_name,
+        metadata={
+            "model": model_name,
+            "model_ai": model_name,
+            "model_evaluator": EvaluationConfig.EVALUATOR_MODEL,
+            "evaluation_type": "graph_trajectory",
+        },
+    )
+
+    # Collect results
+    all_results = []
+
+    async for result_row in async_results:
+        all_results.append(result_row)
+
+    # Extract scores using the utils function
+    extracted_scores = extract_scores_from_results(all_results)
+
+    # Print detailed score summary
+    print_scores_summary(
+        model_name=model_name,
+        extracted_scores=extracted_scores,
+        score_display_names=GRAPH_TRAJECTORY_SCORE_NAMES,
+        score_scale=100.0,
+        score_suffix="%",
+    )
+
+    return {
+        "experiment_name": experiment_name,
+        "results": all_results,
+        "extracted_scores": extracted_scores,
+        "total_results": len(all_results),
+        "status": "completed",
+    }
 
 
-# LangSmith pytest test functions
-@pytest.mark.langsmith
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "test_combo",
-    TEST_COMBINATIONS,
-    ids=lambda combo: f"{combo[1]['name']}_{combo[0].split(':')[-1]}",
-)
-async def test_graph_trajectory_evaluation(test_combo):
-    """Test graph trajectory evaluation with LangSmith integration for all model-scenario combinations."""
-    # Unpack the test combination
-    model_name, scenario = test_combo
+def parse_args():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(
+        description="Graph Trajectory Evaluation with OpenEvals",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
 
-    # Skip if required environment variables are not set
+    parser.add_argument(
+        "--model",
+        choices=EvaluationConfig.AGENT_MODELS,
+        help="Run evaluation for specific model only",
+    )
+
+    parser.add_argument(
+        "--verbose", action="store_true", help="Enable verbose output for debugging"
+    )
+
+    parser.add_argument(
+        "--list-models", action="store_true", help="List available models and exit"
+    )
+
+    parser.add_argument(
+        "--list-scenarios",
+        action="store_true",
+        help="List available scenarios and exit",
+    )
+
+    return parser.parse_args()
+
+
+async def main():
+    """Run the graph trajectory evaluation."""
+    args = parse_args()
+
+    # Handle list options
+    if args.list_models:
+        print("🤖 Available Models:")
+        for model in EvaluationConfig.AGENT_MODELS:
+            print(f"  • {model}")
+        return
+
+    if args.list_scenarios:
+        print("📋 Available Scenarios:")
+        for scenario in EvaluationConfig.TEST_SCENARIOS:
+            print(f"  • {scenario['name']}: {scenario['expected_behavior']}")
+        return
+
+    # Check required environment variables (skip LANGSMITH_API_KEY for testing)
     required_env_vars = ["TAVILY_API_KEY", "SILICONFLOW_API_KEY"]
-    for var in required_env_vars:
-        if not os.getenv(var):
-            pytest.skip(f"Required environment variable {var} not set")
+    missing_vars = [var for var in required_env_vars if not os.getenv(var)]
+    if missing_vars:
+        print(f"❌ Missing required environment variables: {', '.join(missing_vars)}")
+        print("Please set these variables and try again.")
+        return
 
-    # Also check for LangSmith API key
-    if not os.getenv("LANGSMITH_API_KEY"):
-        pytest.skip("LANGSMITH_API_KEY not set")
+    print("🎯 Graph Trajectory Evaluation")
+    print("=" * 50)
+    print(f"🤖 AI Models: {', '.join(EvaluationConfig.AGENT_MODELS)}")
+    print(f"⚖️  Evaluator Model: {EvaluationConfig.EVALUATOR_MODEL}")
+    print(f"📋 Scenarios: {len(EvaluationConfig.TEST_SCENARIOS)}")
+    if args.verbose:
+        print("🔊 Verbose mode enabled")
 
-    # Generate unique thread ID for this combination
-    thread_id = (
-        f"eval_{model_name.replace(':', '_').replace('/', '_')}_{scenario['name']}"
-    )
+    # Ensure dataset exists
+    dataset_name = await ensure_dataset()
 
-    logger.info(
-        f"Testing {model_name} with scenario '{scenario['name']}': {scenario['query']}"
-    )
-
-    # Run agent scenario
-    trajectory_data = await run_agent_scenario(
-        model_name=model_name, query=scenario["query"], thread_id=thread_id
-    )
-
-    # Verify trajectory was captured
-    assert "trajectory" in trajectory_data or "error" in trajectory_data
-
-    # Log inputs as dict with query (LangSmith requires dict format)
-    t.log_inputs({"question": scenario["query"]})
-
-    # Log outputs - the actual agent conversation trajectory
-    if "trajectory" in trajectory_data:
-        # Convert to message format for the actual conversation
-        messages = []
-        if "result" in trajectory_data and "messages" in trajectory_data["result"]:
-            for msg in trajectory_data["result"]["messages"]:
-                if hasattr(msg, "model_dump"):
-                    messages.append(msg.model_dump())
-                elif hasattr(msg, "dict"):
-                    messages.append(msg.dict())
-                else:
-                    messages.append(dict(msg))
-
-        t.log_outputs({"messages": messages})
+    # Determine which models to run (always run all scenarios from dataset)
+    if args.model:
+        models_to_run = [args.model]
     else:
-        t.log_outputs({"error": trajectory_data.get("error", "Unknown error")})
+        models_to_run = EvaluationConfig.AGENT_MODELS
 
-    # Log reference outputs as expected behavior description
-    t.log_reference_outputs({"expected_behavior": scenario["expected_behavior"]})
+    # Run experiments by model (each model gets one experiment with all scenarios from dataset)
+    results = {}
+    experiment_count = 0
+    total_experiments = len(models_to_run)
+    total_evaluations = len(models_to_run) * len(EvaluationConfig.TEST_SCENARIOS)
 
-    # Run evaluation - this will log feedback to LangSmith automatically
-    evaluation_result = await evaluate_trajectory(
-        trajectory_data=trajectory_data,
-        scenario=scenario,
-        evaluator_model=EvaluationConfig.EVALUATOR_MODEL,
+    print(
+        f"\n🧪 Running {total_experiments} model experiments ({total_evaluations} total evaluations):"
     )
 
-    # Log evaluation results
-    logger.info(f"[{model_name}] [{scenario['name']}] Evaluation completed")
+    for model_name in models_to_run:
+        experiment_count += 1
 
-    # Log detailed results if evaluation succeeded
-    if "evaluation" in evaluation_result:
-        eval_data = evaluation_result["evaluation"]
-        score = eval_data.get("score", False)
-        reasoning = eval_data.get("reasoning", "No reasoning provided")
-        logger.info(
-            f"[{model_name}] [{scenario['name']}] Score: {score}, Reasoning: {reasoning}"
-        )
+        print(f"\n[{experiment_count}/{total_experiments}] Testing model: {model_name}")
 
-    # Note: We removed the assertion on score being True
-    # Instead, let the evaluation score reflect real performance
-    # LangSmith will track and display the actual evaluation results
+        try:
+            result = await run_model_experiment(model_name, dataset_name, args.verbose)
+            results[model_name] = result
+
+        except Exception as e:
+            print(f"❌ Failed: {model_name} - {e}")
+            traceback.print_exc()
+            results[model_name] = {"status": "failed", "error": str(e)}
+
+    # Use the utils function for comprehensive summary
+    print_evaluation_summary(
+        results=results,
+        score_display_names=GRAPH_TRAJECTORY_SCORE_NAMES,
+        score_scale=100.0,
+        score_suffix="%",
+    )
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

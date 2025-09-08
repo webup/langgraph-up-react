@@ -1,4 +1,4 @@
-.PHONY: all format lint test test_unit test_integration test_e2e test_all test_evaluations test_watch test_watch_unit test_watch_integration test_watch_e2e test_profile extended_tests dev dev_ui
+.PHONY: all format lint test test_unit test_integration test_e2e test_all evals eval_graph eval_multiturn eval_graph_qwen eval_graph_glm eval_multiturn_polite eval_multiturn_hacker test_watch test_watch_unit test_watch_integration test_watch_e2e test_profile extended_tests dev dev_ui
 
 # Default target executed when no arguments are given to make.
 all: help
@@ -20,14 +20,40 @@ test_integration:
 test_e2e:
 	uv run python -m pytest tests/e2e_tests/
 
-test_evaluations:
-	uv run python -m pytest tests/evaluations/ -v
-
-test_eval_graph:
-	uv run python -m pytest -n auto tests/evaluations/graph.py -v
-
 test_all:
 	uv run python -m pytest tests/
+
+######################
+# EVALUATIONS
+######################
+
+# Comprehensive evaluation suite
+evals: eval_graph eval_multiturn
+
+# Graph trajectory evaluation (scenario-specific LLM-as-judge)
+eval_graph:
+	cd tests/evaluations && python graph.py --verbose
+
+# Multi-turn chat evaluation (role-persona simulations)
+eval_multiturn:
+	cd tests/evaluations && python multiturn.py --verbose
+
+# Run specific evaluation scenarios
+eval_graph_qwen:
+	cd tests/evaluations && python graph.py --model siliconflow:Qwen/Qwen3-8B --verbose
+
+eval_graph_glm:
+	cd tests/evaluations && python graph.py --model siliconflow:THUDM/GLM-4-9B-0414 --verbose
+
+eval_multiturn_polite:
+	cd tests/evaluations && python multiturn.py --persona polite --verbose
+
+eval_multiturn_hacker:
+	cd tests/evaluations && python multiturn.py --persona hacker --verbose
+
+######################
+# WATCH MODES
+######################
 
 # Watch mode for tests
 test_watch: test_watch_unit
@@ -115,13 +141,20 @@ help:
 	@echo 'test_unit                    - run unit tests only'
 	@echo 'test_integration             - run integration tests only'
 	@echo 'test_e2e                     - run e2e tests only'
-	@echo 'test_evaluations             - run graph trajectory evaluation tests'
-	@echo 'test_eval_graph              - run graph evaluations in parallel (fast)'
 	@echo 'test_all                     - run all tests (unit + integration + e2e)'
 	@echo 'test_watch                   - run unit tests in watch mode'
 	@echo 'test_watch_unit              - run unit tests in watch mode'
 	@echo 'test_watch_integration       - run integration tests in watch mode'
 	@echo 'test_watch_e2e               - run e2e tests in watch mode'
+	@echo ''
+	@echo 'EVALUATIONS:'
+	@echo 'evals                        - run comprehensive evaluation suite (all models)'
+	@echo 'eval_graph                   - run graph trajectory evaluations (LLM-as-judge)'
+	@echo 'eval_multiturn               - run multi-turn chat evaluations (role-persona)'
+	@echo 'eval_graph_qwen              - run graph evaluation with Qwen/Qwen3-8B model'
+	@echo 'eval_graph_glm               - run graph evaluation with THUDM/GLM-4-9B model'
+	@echo 'eval_multiturn_polite        - run multiturn with polite persona only'
+	@echo 'eval_multiturn_hacker        - run multiturn with hacker persona only'
 	@echo ''
 	@echo 'CODE QUALITY:'
 	@echo 'format                       - run code formatters'
