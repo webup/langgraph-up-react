@@ -90,6 +90,7 @@ cd langgraph-up-react
 ```bash
 uv sync --dev
 ```
+   This installs everything needed for local development, including `ipykernel` so you can select this environment inside Jupyter notebooks.
 
 4. Copy the example environment file and fill in essential keys:
 ```bash

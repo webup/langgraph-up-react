@@ -24,7 +24,7 @@ dependencies = [
 
 
 [project.optional-dependencies]
-dev = ["mypy>=1.11.1", "ruff>=0.6.1"]
+dev = ["ipykernel>=6.29.5", "mypy>=1.11.1", "ruff>=0.6.1"]
 
 [build-system]
 requires = ["setuptools>=73.0.0", "wheel"]
@@ -82,4 +82,5 @@ dev = [
     "agentevals>=0.0.9",
     "langsmith[pytest]>=0.4.16",
     "pytest-xdist>=3.8.0",
+    "ipykernel>=6.29.5",
 ]
