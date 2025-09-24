@@ -185,6 +185,26 @@ async def my_custom_tool(input: str) -> str:
 # Add to the tools list in get_tools()
 ```
 
+### Define Structured Outputs
+Use [`AgentBaseModel`](./src/common/basemodel.py) when you need structured responses (LLM tool outputs or graph state). It enforces strict typing, forbids unknown fields, and supports alias-driven serialization by default:
+
+```python
+from pydantic import Field
+
+from common import AgentBaseModel
+
+
+class Answer(AgentBaseModel):
+    display_name: str = Field(alias="displayName")
+    score: float
+
+
+result = Answer(display_name="Curie", score=0.98)
+assert result.model_dump(by_alias=True) == {"displayName": "Curie", "score": 0.98}
+```
+
+Keep shared schema primitives in `src/common/basemodel.py` so provider integrations in `src/common/models/` stay focused on model client wiring.
+
 ### Add New MCP Tools
 Integrate external MCP servers for additional capabilities:
 
@@ -330,6 +350,7 @@ The template uses a modular architecture:
 
 Key components:
 - **`src/common/mcp.py`**: MCP client management for external documentation sources
+- **`src/common/basemodel.py`**: Centralizes Pydantic configuration via `AgentBaseModel` for structured tool outputs
 - **Dynamic tool loading**: Runtime tool selection based on context configuration
 - **Context system**: Centralized configuration with environment variable support
 

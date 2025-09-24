@@ -248,6 +248,26 @@ async def my_custom_tool(input: str) -> str:
     return "工具输出"
 ```
 
+### 定义结构化输出
+当需要返回结构化响应（例如工具输出或图状态）时，请使用 [`AgentBaseModel`](./src/common/basemodel.py)。它默认启用严格类型检查、禁止未知字段，并支持字段别名序列化：
+
+```python
+from pydantic import Field
+
+from common import AgentBaseModel
+
+
+class Answer(AgentBaseModel):
+    display_name: str = Field(alias="displayName")
+    score: float
+
+
+result = Answer(display_name="居里", score=0.98)
+assert result.model_dump(by_alias=True) == {"displayName": "居里", "score": 0.98}
+```
+
+共享的 schema 基类请放在 `src/common/basemodel.py` 中，以保持 `src/common/models/` 目录专注于模型客户端集成。
+
 ### 添加新的 MCP 工具
 集成外部 MCP 服务器以获得更多功能：
 
